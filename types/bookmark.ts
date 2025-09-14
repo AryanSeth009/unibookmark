@@ -1,0 +1,20 @@
+export interface Bookmark {
+  id: string
+  title: string
+  url: string
+  description?: string
+  collectionId: string
+  tags: string[]
+  createdAt: Date
+  favicon?: string
+}
+
+export interface Collection {
+  id: string
+  name: string
+  count: number
+  isDefault: boolean
+}
+
+export type ViewMode = "grid" | "list" | "masonry"
+export type DateFilter = "all" | "today" | "week" | "month"

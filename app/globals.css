@@ -1,0 +1,184 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /* Added light theme variables for proper theme switching */
+  --background: #ffffff; /* White background for light theme */
+  --foreground: #1a1a1a; /* Dark text for light theme */
+  --card: #ffffff; /* White cards */
+  --card-foreground: #1a1a1a; /* Dark card text */
+  --popover: #ffffff; /* White popover */
+  --popover-foreground: #1a1a1a; /* Dark popover text */
+  --primary: #6c47ff; /* n8n purple accent */
+  --primary-foreground: #ffffff; /* White on purple */
+  --secondary: #00d8a4; /* n8n teal accent */
+  --secondary-foreground: #ffffff; /* Dark text on teal for better contrast in light theme */
+  --muted: #f5f5f5; /* Light gray muted */
+  --muted-foreground: #6b7280; /* Medium gray text */
+  --accent: #ff47a0; /* n8n hot pink */
+  --accent-foreground: #ffffff; /* White on pink */
+  --destructive: #ef4444; /* Red for destructive actions */
+  --destructive-foreground: #ffffff; /* White on red */
+  --border: #e5e7eb; /* Light border */
+  --input: #ffffff; /* White input background */
+  --ring: #6c47ff; /* Purple focus ring */
+  --chart-1: #6c47ff; /* Purple chart color */
+  --chart-2: #00d8a4; /* Teal chart color */
+  --chart-3: #ff47a0; /* Pink chart color */
+  --chart-4: #6b7280; /* Gray chart color */
+  --chart-5: #1a1a1a; /* Dark chart color */
+  --radius: 0.5rem; /* Rounded corners */
+  --sidebar: #fafafa; /* Light sidebar background */
+  --sidebar-foreground: #1a1a1a; /* Dark sidebar text */
+  --sidebar-primary: #6c47ff; /* Sidebar primary */
+  --sidebar-primary-foreground: #ffffff; /* Sidebar primary text */
+  --sidebar-accent: #f5f5f5; /* Light sidebar accent */
+  --sidebar-accent-foreground: #1a1a1a; /* Dark sidebar accent text */
+  --sidebar-border: #e5e7eb; /* Light sidebar border */
+  --sidebar-ring: #6c47ff; /* Sidebar focus ring */
+}
+
+.dark {
+  /* Dark theme with n8n inspired colors */
+  --background: #1a1a1a; /* Near black background */
+  --foreground: #ffffff; /* White text */
+  --card: #2a2a2a; /* Dark gray for cards */
+  --card-foreground: #ffffff; /* White card text */
+  --popover: #2a2a2a; /* Dark popover */
+  --popover-foreground: #ffffff; /* White popover text */
+  --primary: #6c47ff; /* n8n purple accent */
+  --primary-foreground: #ffffff; /* White on purple */
+  --secondary: #00d8a4; /* n8n teal accent */
+  --secondary-foreground: #ffffff; /* White text on teal for dark theme */
+  --muted: #2a2a2a; /* Muted dark gray */
+  --muted-foreground: #a0a0a0; /* Light gray text */
+  --accent: #ff47a0; /* n8n hot pink */
+  --accent-foreground: #ffffff; /* White on pink */
+  --destructive: #ff4444; /* Red for destructive actions */
+  --destructive-foreground: #ffffff; /* White on red */
+  --border: #3a3a3a; /* Subtle border */
+  --input: #2a2a2a; /* Input background */
+  --ring: #6c47ff; /* Purple focus ring */
+  --chart-1: #6c47ff; /* Purple chart color */
+  --chart-2: #00d8a4; /* Teal chart color */
+  --chart-3: #ff47a0; /* Pink chart color */
+  --chart-4: #a0a0a0; /* Gray chart color */
+  --chart-5: #ffffff; /* White chart color */
+  --radius: 0.5rem; /* Rounded corners */
+  --sidebar: #1a1a1a; /* Sidebar background */
+  --sidebar-foreground: #ffffff; /* Sidebar text */
+  --sidebar-primary: #6c47ff; /* Sidebar primary */
+  --sidebar-primary-foreground: #ffffff; /* Sidebar primary text */
+  --sidebar-accent: #2a2a2a; /* Sidebar accent */
+  --sidebar-accent-foreground: #ffffff; /* Sidebar accent text */
+  --sidebar-border: #3a3a3a; /* Sidebar border */
+  --sidebar-ring: #6c47ff; /* Sidebar focus ring */
+}
+
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground transition-colors duration-300;
+  }
+}
+
+/* Enhanced n8n signature gradient utility classes with better contrast */
+.n8n-gradient-bg {
+  background: linear-gradient(135deg, #6c47ff 0%, #ff47a0 50%, #00d8a4 100%);
+}
+
+.n8n-gradient-text {
+  background: linear-gradient(135deg, #6c47ff 0%, #00d8a4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Added masonry grid utilities for better layout */
+.masonry-grid {
+  column-count: 1;
+  column-gap: 1rem;
+  column-fill: balance;
+}
+
+@media (min-width: 640px) {
+  .masonry-grid {
+    column-count: 2;
+  }
+}
+
+@media (min-width: 768px) {
+  .masonry-grid {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 1024px) {
+  .masonry-grid {
+    column-count: 4;
+  }
+}
+
+@media (min-width: 1280px) {
+  .masonry-grid {
+    column-count: 5;
+  }
+}
+
+.masonry-item {
+  break-inside: avoid;
+  margin-bottom: 1rem;
+}
+
+/* Added smooth animations for theme transitions */
+* {
+  transition-property: background-color, border-color, color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}

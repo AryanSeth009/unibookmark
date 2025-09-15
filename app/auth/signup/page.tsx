@@ -1,12 +1,7 @@
 "use client"
 
 import type React from "react"
-
 import { createClient } from "@/lib/supabase/client"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -15,8 +10,11 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [agreedToTerms, setAgreedToTerms] = useState(false)
   const router = useRouter()
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -27,6 +25,12 @@ export default function SignUpPage() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match")
+      setIsLoading(false)
+      return
+    }
+
+    if (!agreedToTerms) {
+      setError("Please agree to the Terms of Service and Privacy Policy")
       setIsLoading(false)
       return
     }
@@ -49,67 +53,169 @@ export default function SignUpPage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center p-6 md:p-10 bg-background">
-      <div className="w-full max-w-sm">
-        <div className="flex flex-col gap-6">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold n8n-gradient-text mb-2">SmartBookmark.AI</h1>
-            <p className="text-muted-foreground">Create your intelligent bookmark manager account</p>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-2xl">Sign up</CardTitle>
-              <CardDescription>Create a new account</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleSignUp}>
-                <div className="flex flex-col gap-6">
-                  <div className="grid gap-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="m@example.com"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="confirm-password">Confirm Password</Label>
-                    <Input
-                      id="confirm-password"
-                      type="password"
-                      required
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                    />
-                  </div>
-                  {error && <p className="text-sm text-destructive">{error}</p>}
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Creating account..." : "Sign up"}
-                  </Button>
-                </div>
-                <div className="mt-4 text-center text-sm">
-                  Already have an account?{" "}
-                  <Link href="/auth/login" className="underline underline-offset-4">
-                    Login
-                  </Link>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
+    <div
+      className="min-h-screen w-full flex items-center justify-center p-4"
+      style={{
+        backgroundImage: 'url(/sm1.png)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* Background Effects */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-600 rounded-full blur-[100px] opacity-20" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-600 rounded-full blur-[100px] opacity-20" />
+      </div>
+
+      <div className="w-full max-w-md bg-gray-900/50 backdrop-blur-xl border border-gray-800 p-8 rounded-2xl">
+        <div className="text-center mb-8">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">
+            SmartBookmark.AI
+          </h1>
+          <h2 className="text-2xl font-bold text-white mb-2">Create an account</h2>
+          <p className="text-gray-400">Join us to explore intelligent bookmarking</p>
         </div>
+
+        <form onSubmit={handleSignUp} className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="email" className="block text-sm text-gray-400">
+              Email
+            </label>
+            <input
+              id="email"
+              type="email"
+              placeholder="Enter your email"
+              className="w-full h-12 px-3 py-2 bg-gray-800/50 border border-gray-700 text-white placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-600"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              disabled={isLoading}
+              required
+            />
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="password" className="block text-sm text-gray-400">
+              Password
+            </label>
+            <div className="relative">
+              <input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                className="w-full h-12 px-3 py-2 bg-gray-800/50 border border-gray-700 text-white placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-600 pr-10"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                disabled={isLoading}
+              >
+                {showPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                    <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label htmlFor="confirm-password" className="block text-sm text-gray-400">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
+                id="confirm-password"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                className="w-full h-12 px-3 py-2 bg-gray-800/50 border border-gray-700 text-white placeholder-gray-500 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-600 pr-10"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={isLoading}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-300"
+                disabled={isLoading}
+              >
+                {showConfirmPassword ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                    <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clipRule="evenodd" />
+                    <path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex items-start gap-3">
+            <input
+              type="checkbox"
+              id="terms"
+              className="w-4 h-4 mt-0.5 rounded border-gray-700 bg-gray-800/50 text-purple-600 focus:ring-purple-500"
+              checked={agreedToTerms}
+              onChange={(e) => setAgreedToTerms(e.target.checked)}
+            />
+            <label htmlFor="terms" className="text-sm text-gray-400 leading-tight">
+              I agree to the{" "}
+              <Link href="/terms" className="text-purple-400 hover:text-purple-300">
+                Terms of Service
+              </Link>{" "}
+              and{" "}
+              <Link href="/privacy" className="text-purple-400 hover:text-purple-300">
+                Privacy Policy
+              </Link>
+            </label>
+          </div>
+
+          {error && (
+            <div className="p-3 rounded-lg bg-red-900/20 border border-red-800 text-red-400 text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="w-full h-12 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white rounded-xl font-medium focus:outline-none focus:ring-2 focus:ring-purple-600 focus:ring-offset-2 focus:ring-offset-gray-900 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <div className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Creating account...
+              </div>
+            ) : (
+              'Create account'
+            )}
+          </button>
+
+          <div className="text-center text-gray-400 text-sm">
+            Already have an account?{" "}
+            <Link href="/auth/login" className="text-purple-400 hover:text-purple-300">
+              Sign in
+            </Link>
+          </div>
+        </form>
       </div>
     </div>
   )

@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import type React from "react"
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import type { Collection } from "@/types/bookmark"
+import type React from "react";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import type { Collection } from "@/types/bookmark";
 import {
   Bookmark,
   Plus,
@@ -19,19 +19,25 @@ import {
   Hash,
   Tag,
   Link,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
-import { UserProfileSection } from "@/components/user-profile-section"
-import { mutate as swrMutate } from "swr"
-import { updateCollection, deleteCollection } from "@/hooks/use-collections"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { MoreVertical } from "lucide-react"
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import { UserProfileSection } from "@/components/user-profile-section";
+import { mutate as swrMutate } from "swr";
+import { updateCollection, deleteCollection } from "@/hooks/use-collections";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreVertical } from "lucide-react";
+import { ThemeToggle } from "./theme-toggle";
 
 interface SidebarProps {
-  collections: Collection[]
-  selectedCollection: string
-  onSelectCollection: (collectionId: string) => void
-  onAddCollection: (name: string) => void
+  collections: Collection[];
+  selectedCollection: string;
+  onSelectCollection: (collectionId: string) => void;
+  onAddCollection: (name: string) => void;
 }
 
 const collectionIcons = {
@@ -45,14 +51,18 @@ const collectionIcons = {
   chats: MessageCircle,
   reddit: Hash,
   jam: Music,
-}
+};
 
 function renderCollectionIcon(
   icon: string | undefined,
   color: string | undefined,
-  FallbackIcon: React.ComponentType<{ className?: string }> = Tag,
+  FallbackIcon: React.ComponentType<{ className?: string }> = Tag
 ) {
-  const hasUrlIcon = icon && (icon.startsWith("http://") || icon.startsWith("https://") || icon.endsWith(".svg"))
+  const hasUrlIcon =
+    icon &&
+    (icon.startsWith("http://") ||
+      icon.startsWith("https://") ||
+      icon.endsWith(".svg"));
   if (hasUrlIcon) {
     return (
       <span
@@ -61,44 +71,49 @@ function renderCollectionIcon(
       >
         <img src={icon} alt="icon" className="w-3.5 h-3.5 flex-shrink-0" />
       </span>
-    )
+    );
   }
-  return <FallbackIcon className="w-4 h-4 flex-shrink-0" />
+  return <FallbackIcon className="w-4 h-4 flex-shrink-0" />;
 }
 
-export function Sidebar({ collections, selectedCollection, onSelectCollection, onAddCollection }: SidebarProps) {
-  const [isAddingCollection, setIsAddingCollection] = useState(false)
-  const [newCollectionName, setNewCollectionName] = useState("")
+export function Sidebar({
+  collections,
+  selectedCollection,
+  onSelectCollection,
+  onAddCollection,
+}: SidebarProps) {
+  const [isAddingCollection, setIsAddingCollection] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
-    new Set(["entertainment", "ecommerce", "socials", "chats"]),
-  )
+    new Set(["entertainment", "ecommerce", "socials", "chats"])
+  );
 
   const handleAddCollection = () => {
     if (newCollectionName.trim()) {
-      onAddCollection(newCollectionName.trim())
-      setNewCollectionName("")
-      setIsAddingCollection(false)
+      onAddCollection(newCollectionName.trim());
+      setNewCollectionName("");
+      setIsAddingCollection(false);
     }
-  }
+  };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {
-      handleAddCollection()
+      handleAddCollection();
     } else if (e.key === "Escape") {
-      setIsAddingCollection(false)
-      setNewCollectionName("")
+      setIsAddingCollection(false);
+      setNewCollectionName("");
     }
-  }
+  };
 
   const toggleCollection = (collectionId: string) => {
-    const newExpanded = new Set(expandedCollections)
+    const newExpanded = new Set(expandedCollections);
     if (newExpanded.has(collectionId)) {
-      newExpanded.delete(collectionId)
+      newExpanded.delete(collectionId);
     } else {
-      newExpanded.add(collectionId)
+      newExpanded.add(collectionId);
     }
-    setExpandedCollections(newExpanded)
-  }
+    setExpandedCollections(newExpanded);
+  };
 
   return (
     <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
@@ -107,7 +122,10 @@ export function Sidebar({ collections, selectedCollection, onSelectCollection, o
           <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
             <Bookmark className="w-3 h-3 text-primary-foreground" />
           </div>
-          <h1 className="font-semibold text-sidebar-foreground">Unibookmark.Ai</h1>
+          <h1 className="font-semibold text-sidebar-foreground">
+            Unibookmark.Ai
+          </h1>
+          {/* <ThemeToggle className="pl-2 p-0  hover:bg-sidebar-accent"  placeholder="Theme"/> */}
         </div>
       </div>
 
@@ -118,7 +136,7 @@ export function Sidebar({ collections, selectedCollection, onSelectCollection, o
             {collections
               .filter((col) => col.id === "all")
               .map((collection) => {
-                const Icon = Bookmark
+                const Icon = Bookmark;
                 return (
                   <button
                     key={collection.id}
@@ -127,25 +145,32 @@ export function Sidebar({ collections, selectedCollection, onSelectCollection, o
                       "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 text-left",
                       selectedCollection === collection.id
                         ? "bg-primary text-primary-foreground border border-primary/20"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
                   >
-                    {renderCollectionIcon(collection.icon, collection.color, Icon)}
-                    <span className="flex-1">{collection.name}</span>
-                    {typeof collection.count === "number" && collection.count > 0 && (
-                      <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                        {collection.count}
-                      </span>
+                    {renderCollectionIcon(
+                      collection.icon,
+                      collection.color,
+                      Icon
                     )}
+                    <span className="flex-1">{collection.name}</span>
+                    {typeof collection.count === "number" &&
+                      collection.count > 0 && (
+                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                          {collection.count}
+                        </span>
+                      )}
                   </button>
-                )
+                );
               })}
           </div>
 
           {/* Collections Section */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-medium text-muted-foreground">Collections</h2>
+              <h2 className="text-sm font-medium text-muted-foreground">
+                Collections
+              </h2>
               <Button
                 variant="ghost"
                 size="sm"
@@ -160,26 +185,37 @@ export function Sidebar({ collections, selectedCollection, onSelectCollection, o
               {collections
                 .filter((col) => col.id !== "all")
                 .map((collection) => {
-                  const Icon = collectionIcons[collection.id as keyof typeof collectionIcons] || Tag
+                  const Icon =
+                    collectionIcons[
+                      collection.id as keyof typeof collectionIcons
+                    ] || Tag;
 
                   return (
-                    <div key={collection.id} className="group flex items-center">
+                    <div
+                      key={collection.id}
+                      className="group flex items-center"
+                    >
                       <button
                         onClick={() => onSelectCollection(collection.id)}
                         className={cn(
                           "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 text-left",
                           selectedCollection === collection.id
                             ? "bg-primary text-primary-foreground border border-primary/20"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                         )}
                       >
-                        {renderCollectionIcon(collection.icon, collection.color, Icon)}
-                        <span className="flex-1">{collection.name}</span>
-                        {typeof collection.count === "number" && collection.count > 0 && (
-                          <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                            {collection.count}
-                          </span>
+                        {renderCollectionIcon(
+                          collection.icon,
+                          collection.color,
+                          Icon
                         )}
+                        <span className="flex-1">{collection.name}</span>
+                        {typeof collection.count === "number" &&
+                          collection.count > 0 && (
+                            <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                              {collection.count}
+                            </span>
+                          )}
                       </button>
 
                       <DropdownMenu>
@@ -194,13 +230,19 @@ export function Sidebar({ collections, selectedCollection, onSelectCollection, o
                         <DropdownMenuContent align="end" className="w-40">
                           <DropdownMenuItem
                             onClick={async () => {
-                              const name = window.prompt("Rename collection", collection.name)
-                              if (!name || name.trim() === collection.name) return
+                              const name = window.prompt(
+                                "Rename collection",
+                                collection.name
+                              );
+                              if (!name || name.trim() === collection.name)
+                                return;
                               try {
-                                await updateCollection(collection.id, { name: name.trim() })
-                                await swrMutate("/api/collections")
+                                await updateCollection(collection.id, {
+                                  name: name.trim(),
+                                });
+                                await swrMutate("/api/collections");
                               } catch (e) {
-                                console.error("Rename failed", e)
+                                console.error("Rename failed", e);
                               }
                             }}
                           >
@@ -209,13 +251,19 @@ export function Sidebar({ collections, selectedCollection, onSelectCollection, o
                           <DropdownMenuItem
                             className="text-destructive"
                             onClick={async () => {
-                              if (!window.confirm(`Delete collection "${collection.name}"?`)) return
+                              if (
+                                !window.confirm(
+                                  `Delete collection "${collection.name}"?`
+                                )
+                              )
+                                return;
                               try {
-                                await deleteCollection(collection.id)
-                                if (selectedCollection === collection.id) onSelectCollection("all")
-                                await swrMutate("/api/collections")
+                                await deleteCollection(collection.id);
+                                if (selectedCollection === collection.id)
+                                  onSelectCollection("all");
+                                await swrMutate("/api/collections");
                               } catch (e) {
-                                console.error("Delete failed", e)
+                                console.error("Delete failed", e);
                               }
                             }}
                           >
@@ -224,7 +272,7 @@ export function Sidebar({ collections, selectedCollection, onSelectCollection, o
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
-                  )
+                  );
                 })}
 
               {isAddingCollection && (
@@ -235,7 +283,7 @@ export function Sidebar({ collections, selectedCollection, onSelectCollection, o
                     onKeyDown={handleKeyPress}
                     onBlur={() => {
                       if (!newCollectionName.trim()) {
-                        setIsAddingCollection(false)
+                        setIsAddingCollection(false);
                       }
                     }}
                     placeholder="Collection name"
@@ -248,7 +296,9 @@ export function Sidebar({ collections, selectedCollection, onSelectCollection, o
           </div>
 
           <div>
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">Settings</h2>
+            <h2 className="text-sm font-medium text-muted-foreground mb-3">
+              Settings
+            </h2>
             <div className="space-y-1">
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-left transition-all duration-200">
                 <Tag className="w-4 h-4 flex-shrink-0" />
@@ -262,8 +312,12 @@ export function Sidebar({ collections, selectedCollection, onSelectCollection, o
           </div>
         </div>
       </ScrollArea>
+      <div className="p-2 border-t flex justify-center items-center gap-1 border-sidebar-border/50">
+        <ThemeToggle className="6 p-0  hover:bg-sidebar-accent"  placeholder="Theme"/>
+        {/* <h2 className="text-sm font-medium text-muted-foreground">Theme</h2> */}
+      </div>
 
       <UserProfileSection />
     </div>
-  )
+  );
 }

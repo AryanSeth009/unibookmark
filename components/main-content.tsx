@@ -155,7 +155,7 @@ export function MainContent({
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <ThemeToggle />
+              {/* <ThemeToggle /> */}
               <Button
                 onClick={onAddBookmark}
                 className="bg-primary hover:bg-primary/90  text-primary-foreground shadow-lg hover:shadow-2xl transition-all duration-200"

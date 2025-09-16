@@ -58,7 +58,7 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
   return (
     <Card
       className={cn(
-        "group cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-primary/20",
+        "group cursor-pointer transition-all h-32 duration-300 hover:shadow-xl hover:shadow-primary/20",
         "bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/30 hover:bg-card/90",
         "overflow-hidden",
         isHovered && "scale-[1.02] -translate-y-1",
@@ -67,7 +67,7 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleVisit}
     >
-      <div className="relative h-32 bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 overflow-hidden">
+      <div className="relative  bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         <div className="absolute top-3 right-3 z-10">
           <DropdownMenu>
@@ -211,11 +211,20 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
         <div className="mt-3 pt-3 border-t border-border/50">
           <p className="text-xs text-muted-foreground">
             Added{" "}
-            {bookmark.createdAt.toLocaleDateString("en-US", {
-              month: "short",
-              day: "numeric",
-              year: bookmark.createdAt.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined,
-            })}
+            {(() => {
+              try {
+                const d = bookmark.created_at ? new Date(bookmark.created_at) : undefined
+                return d
+                  ? d.toLocaleDateString("en-US", {
+                      month: "short",
+                      day: "numeric",
+                      year: d.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined,
+                    })
+                  : ""
+              } catch {
+                return ""
+              }
+            })()}
           </p>
         </div>
       </CardContent>

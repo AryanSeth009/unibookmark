@@ -1,36 +1,38 @@
 import useSWR from "swr"
+import type { Bookmark } from "@/types/bookmark"
 
-export interface Bookmark {
-  id: string
-  title: string
-  url: string
-  description?: string
-  collection_id?: string
-  tags: string[]
-  is_favorite: boolean
-  favicon_url?: string
-  domain?: string
-  created_at: string
-  updated_at: string
-  collections?: {
-    id: string
-    name: string
-    color: string
+const fetcher = (url: string) =>
+  fetch(url, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  }).then((res) => {
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+    return res.json()
+  })
+
+function transformBookmark(raw: any): Bookmark {
+  return {
+    id: raw.id,
+    title: raw.title,
+    url: raw.url,
+    description: raw.description ?? undefined,
+    collectionId: raw.collection_id ?? "",
+    tags: Array.isArray(raw.tags) ? raw.tags : [],
+    createdAt: raw.created_at ? new Date(raw.created_at) : new Date(),
+    favicon: raw.favicon_url ?? undefined,
   }
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
-
 export function useBookmarks(collectionId?: string, search?: string, tags?: string[]) {
   const params = new URLSearchParams()
-  if (collectionId && collectionId !== "all") params.set("collection_id", collectionId)
+  if (collectionId && collectionId !== "all") params.set("collection", collectionId)
   if (search) params.set("search", search)
   if (tags && tags.length > 0) params.set("tags", tags.join(","))
 
   const { data, error, mutate } = useSWR(`/api/bookmarks?${params.toString()}`, fetcher)
 
   return {
-    bookmarks: data?.bookmarks || [],
+    bookmarks: Array.isArray(data) ? (data as any[]).map(transformBookmark) : [],
     isLoading: !error && !data,
     isError: error,
     mutate,
@@ -41,7 +43,7 @@ export function useBookmark(id: string) {
   const { data, error, mutate } = useSWR(id ? `/api/bookmarks/${id}` : null, fetcher)
 
   return {
-    bookmark: data?.bookmark,
+    bookmark: data ? (transformBookmark(data) as Bookmark) : undefined,
     isLoading: !error && !data,
     isError: error,
     mutate,
@@ -58,6 +60,7 @@ export async function createBookmark(bookmarkData: {
 }) {
   const response = await fetch("/api/bookmarks", {
     method: "POST",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -84,6 +87,7 @@ export async function updateBookmark(
 ) {
   const response = await fetch(`/api/bookmarks/${id}`, {
     method: "PUT",
+    credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
@@ -100,6 +104,7 @@ export async function updateBookmark(
 export async function deleteBookmark(id: string) {
   const response = await fetch(`/api/bookmarks/${id}`, {
     method: "DELETE",
+    credentials: "include",
   })
 
   if (!response.ok) {

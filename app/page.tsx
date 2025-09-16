@@ -11,7 +11,8 @@ import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Plus, Zap } from "lucide-react"
-import { useBookmarks, createBookmark, updateBookmark, deleteBookmark, type Bookmark } from "@/hooks/use-bookmarks"
+import { useBookmarks, createBookmark, updateBookmark, deleteBookmark } from "@/hooks/use-bookmarks"
+import type { Bookmark, DateFilter } from "@/types/bookmark"
 import { useCollections, createCollection } from "@/hooks/use-collections"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
@@ -24,7 +25,7 @@ export default function HomePage() {
   const [showExtensionPopup, setShowExtensionPopup] = useState(false)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTags, setSelectedTags] = useState<string[]>([])
-  const [dateFilter, setDateFilter] = useState("all")
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all")
   const [viewMode, setViewMode] = useState<"grid" | "list" | "masonry">("masonry")
 
   const searchInputRef = useRef<HTMLInputElement>(null)
@@ -190,7 +191,7 @@ export default function HomePage() {
 
   const getRecentBookmarks = () => {
     return bookmarks
-      .sort((a: Bookmark, b: Bookmark) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+      .sort((a: Bookmark, b: Bookmark) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 10)
   }
 

@@ -103,6 +103,18 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // Prevent deleting default collections
+    const { data: col } = await supabase
+      .from("collections")
+      .select("is_default,name")
+      .eq("id", params.id)
+      .eq("user_id", user.id)
+      .single()
+
+    if (col?.is_default) {
+      return NextResponse.json({ error: `Cannot delete default collection "${col.name}"` }, { status: 400 })
+    }
+
     // Check if collection has bookmarks
     const { data: bookmarks } = await supabase
       .from("bookmarks")

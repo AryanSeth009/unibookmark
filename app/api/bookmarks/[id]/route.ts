@@ -35,15 +35,8 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Failed to fetch bookmark" }, { status: 500 })
     }
 
-    // Record access for analytics
-    await supabase.from("bookmark_visits").insert({
-      bookmark_id: params.id,
-      user_id: user.id,
-      source: "api",
-    })
-
-    // Update last accessed timestamp
-    await supabase.from("bookmarks").update({ last_accessed: new Date().toISOString() }).eq("id", params.id)
+    // Note: analytics tables or columns may not exist in all deployments
+    // Intentionally skipping analytics writes to avoid runtime errors
 
     return NextResponse.json(bookmark)
   } catch (error) {
@@ -64,7 +57,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const body = await request.json()
-    const { title, url, description, collection_id, tags, is_favorite, is_archived } = body
+    const { title, url, description, collection_id, tags, is_favorite } = body
 
     if (!title || !url) {
       return NextResponse.json({ error: "Title and URL are required" }, { status: 400 })
@@ -77,7 +70,6 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       collection_id: collection_id || null,
       tags: tags || [],
       is_favorite: is_favorite || false,
-      is_archived: is_archived || false,
       updated_at: new Date().toISOString(),
     }
 

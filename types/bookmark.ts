@@ -14,6 +14,9 @@ export interface Collection {
   name: string
   count: number
   isDefault: boolean
+  icon?: string
+  color?: string
+  description?: string
 }
 
 export type ViewMode = "grid" | "list" | "masonry"

@@ -158,7 +158,7 @@ export function MainContent({
               <ThemeToggle />
               <Button
                 onClick={onAddBookmark}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200"
+                className="bg-primary hover:bg-primary/90  text-primary-foreground shadow-lg hover:shadow-2xl transition-all duration-200"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Bookmark
@@ -168,13 +168,13 @@ export function MainContent({
 
           <div className="flex items-center gap-4">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2  transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 ref={searchInputRef}
                 placeholder="Search bookmarks... (⌘K)"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-10 pr-16 bg-background/50 border-border/50 focus:bg-background focus:border-primary/50 transition-all duration-200"
+                className="pl-10 pr-16 bg-background/50 rounded-xl border-border/50 focus:bg-background focus:border-primary/50 transition-all duration-200"
               />
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-xs text-muted-foreground">
                 <Command className="w-3 h-3" />
@@ -299,7 +299,7 @@ export function MainContent({
         ) : viewMode === "masonry" ? (
           <MasonryGrid bookmarks={filteredBookmarks} onEdit={onEditBookmark} onDelete={onDeleteBookmark} />
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1  md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredBookmarks.map((bookmark) => (
               <BookmarkCard key={bookmark.id} bookmark={bookmark} onEdit={onEditBookmark} onDelete={onDeleteBookmark} />
             ))}

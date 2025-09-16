@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         )
       `)
       .eq("user_id", user.id)
-      .eq("is_archived", false)
+      
 
     // Filter by collection
     if (collectionId && collectionId !== "all") {
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Sorting
-    const validSortFields = ["created_at", "updated_at", "title", "last_accessed"]
+    const validSortFields = ["created_at", "updated_at", "title"]
     const sortField = validSortFields.includes(sort) ? sort : "created_at"
     const sortOrder = order === "asc" ? "asc" : "desc"
 
@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, url, description, collection_id, tags, favicon_url, ai_category, ai_summary, ai_keywords } = body
+    const { title, url, description, collection_id, tags, favicon_url } = body
 
     if (!title || !url) {
       return NextResponse.json({ error: "Title and URL are required" }, { status: 400 })
@@ -95,18 +95,29 @@ export async function POST(request: NextRequest) {
     // Check if bookmark already exists for this user
     const { data: existingBookmark } = await supabase
       .from("bookmarks")
-      .select("id")
+      .select("*")
       .eq("user_id", user.id)
       .eq("url", url)
       .single()
 
     if (existingBookmark) {
-      return NextResponse.json({ error: "Bookmark already exists" }, { status: 409 })
+      // Merge tags if new tags are provided
+      if (Array.isArray(tags) && tags.length > 0) {
+        const mergedTags = Array.from(new Set([...(existingBookmark.tags || []), ...tags]))
+        const { data: updated, error: mergeError } = await supabase
+          .from("bookmarks")
+          .update({ tags: mergedTags, updated_at: new Date().toISOString() })
+          .eq("id", existingBookmark.id)
+          .eq("user_id", user.id)
+          .select("*")
+          .single()
+        if (!mergeError && updated) {
+          return NextResponse.json(updated, { status: 200 })
+        }
+      }
+      // Return existing bookmark without error
+      return NextResponse.json(existingBookmark, { status: 200 })
     }
-
-    // Estimate reading time and word count (basic implementation)
-    const estimatedReadingTime = Math.ceil((description?.length || 0) / 1000) || 1
-    const estimatedWordCount = description?.split(" ").length || 0
 
     const bookmarkData = {
       title,
@@ -115,11 +126,6 @@ export async function POST(request: NextRequest) {
       collection_id: collection_id || null,
       tags: tags || [],
       favicon_url: favicon_url || null,
-      ai_category: ai_category || null,
-      ai_summary: ai_summary || null,
-      ai_keywords: ai_keywords || [],
-      reading_time: estimatedReadingTime,
-      word_count: estimatedWordCount,
       user_id: user.id,
     }
 

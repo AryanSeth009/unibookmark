@@ -104,6 +104,7 @@ export default function HomePage() {
     collectionId?: string
     tags?: string[]
     favicon?: string
+    thumbnailUrl?: string
   }) => {
     if (!editingBookmark) return
 
@@ -114,6 +115,7 @@ export default function HomePage() {
         description: bookmarkData.description,
         collection_id: bookmarkData.collectionId,
         tags: bookmarkData.tags || [],
+        thumbnail_url: bookmarkData.thumbnailUrl,
       })
 
       // Refresh data

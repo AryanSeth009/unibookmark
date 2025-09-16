@@ -57,7 +57,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const body = await request.json()
-    const { title, url, description, collection_id, tags, is_favorite } = body
+    const { title, url, description, collection_id, tags, is_favorite, thumbnail_url } = body
 
     if (!title || !url) {
       return NextResponse.json({ error: "Title and URL are required" }, { status: 400 })
@@ -70,6 +70,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       collection_id: collection_id || null,
       tags: tags || [],
       is_favorite: is_favorite || false,
+      thumbnail_url: thumbnail_url || null,
       updated_at: new Date().toISOString(),
     }
 

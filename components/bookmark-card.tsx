@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Bookmark } from "@/types/bookmark"
-import { ExternalLink, MoreVertical, Edit, Trash2, Globe, Heart, BookmarkIcon } from "lucide-react"
+import { ExternalLink, MoreVertical, Edit, Trash2, Globe, Heart, BookmarkIcon, Image as ImageIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useThumbnail } from "@/hooks/use-thumbnail"
 
 interface BookmarkCardProps {
   bookmark: Bookmark
@@ -21,6 +22,7 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
   const [imageError, setImageError] = useState(false)
   const [isLiked, setIsLiked] = useState(false)
   const [isSaved, setIsSaved] = useState(false)
+  const { thumbnailUrl, isLoading: thumbnailLoading } = useThumbnail(bookmark.url)
 
   const handleVisit = () => {
     window.open(bookmark.url, "_blank", "noopener,noreferrer")
@@ -56,37 +58,55 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
   }
 
   return (
-    <Card
-      className={cn(
-        "group cursor-pointer transition-all h-32 duration-300 hover:shadow-xl hover:shadow-primary/20",
-        "bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/30 hover:bg-card/90",
-        "overflow-hidden",
-        isHovered && "scale-[1.02] -translate-y-1",
-      )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={handleVisit}
-    >
-      <div className="relative  bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-        <div className="absolute top-3 right-3 z-10">
+    <div className="n8n-3d-container">
+      <Card
+        className={cn(
+          "n8n-3d-card group cursor-pointer transition-all min-h-56 duration-300",
+          "bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/30 hover:bg-card/90",
+          "overflow-hidden n8n-glass",
+          "hover:shadow-2xl hover:shadow-primary/20",
+          isHovered && "n8n-glow",
+        )}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        onClick={handleVisit}
+      >
+      <div 
+        className="relative n8n-3d-bg bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 overflow-hidden h-24"
+        style={{
+          backgroundImage: thumbnailUrl 
+            ? `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url(${thumbnailUrl})`
+            : undefined,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+        <div className="absolute inset-0 n8n-float" style={{ animationDelay: `${Math.random() * 2}s` }} />
+        {thumbnailLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20">
+            <ImageIcon className="w-6 h-6 text-white/60 animate-pulse" />
+          </div>
+        )}
+        <div className="absolute top-3 right-3 z-10 n8n-depth-5">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="secondary"
                 size="sm"
-                className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-background/80 backdrop-blur-sm hover:bg-background/90"
+                className="n8n-3d-button h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-background/80 backdrop-blur-sm hover:bg-background/90 n8n-interactive-3d"
                 onClick={(e) => e.stopPropagation()}
               >
                 <MoreVertical className="w-3 h-3" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={handleEdit}>
+            <DropdownMenuContent align="end" className="n8n-glass">
+              <DropdownMenuItem onClick={handleEdit} className="n8n-interactive-3d">
                 <Edit className="w-4 h-4 mr-2" />
                 Edit
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDelete} className="text-destructive">
+              <DropdownMenuItem onClick={handleDelete} className="text-destructive n8n-interactive-3d">
                 <Trash2 className="w-4 h-4 mr-2" />
                 Delete
               </DropdownMenuItem>
@@ -122,11 +142,11 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
         </div>
       </div>
 
-      <CardContent className="p-4">
-        <h3 className="font-semibold text-foreground mb-2 line-clamp-2 leading-tight text-balance">{bookmark.title}</h3>
+      <CardContent className="p-5 n8n-depth-2 flex-1 flex flex-col">
+        <h3 className="n8n-3d-text font-semibold text-foreground mb-3 line-clamp-2 leading-tight text-balance">{bookmark.title}</h3>
 
         {bookmark.description && (
-          <p className="text-sm text-muted-foreground mb-3 line-clamp-3 leading-relaxed">{bookmark.description}</p>
+          <p className="n8n-3d-text text-sm text-muted-foreground mb-4 line-clamp-3 leading-relaxed flex-1">{bookmark.description}</p>
         )}
 
         {bookmark.tags.length > 0 && (
@@ -157,15 +177,15 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
           </div>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between n8n-depth-3 mt-auto">
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 px-3 text-xs transition-all duration-200",
-                "opacity-0 group-hover:opacity-100",
-                isLiked && "text-red-500 opacity-100",
+                "n8n-3d-button h-8 px-3 text-xs transition-all duration-200",
+                "opacity-0 group-hover:opacity-100 n8n-interactive-3d",
+                isLiked && "text-red-500 opacity-100 n8n-glow-accent",
               )}
               onClick={(e) => {
                 e.stopPropagation()
@@ -180,9 +200,9 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 px-3 text-xs transition-all duration-200",
-                "opacity-0 group-hover:opacity-100",
-                isSaved && "text-primary opacity-100",
+                "n8n-3d-button h-8 px-3 text-xs transition-all duration-200",
+                "opacity-0 group-hover:opacity-100 n8n-interactive-3d",
+                isSaved && "text-primary opacity-100 n8n-glow",
               )}
               onClick={(e) => {
                 e.stopPropagation()
@@ -197,7 +217,7 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 px-3 text-xs opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-primary/10 hover:text-primary"
+            className="n8n-3d-button h-8 px-3 text-xs opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-primary/10 hover:text-primary n8n-interactive-3d"
             onClick={(e) => {
               e.stopPropagation()
               handleVisit()
@@ -208,12 +228,12 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
           </Button>
         </div>
 
-        <div className="mt-3 pt-3 border-t border-border/50">
-          <p className="text-xs text-muted-foreground">
+        <div className="mt-4 pt-3 border-t border-border/50">
+          <p className="text-xs text-muted-foreground n8n-3d-text">
             Added{" "}
             {(() => {
               try {
-                const d = bookmark.created_at ? new Date(bookmark.created_at) : undefined
+                const d = bookmark.createdAt ? new Date(bookmark.createdAt) : undefined
                 return d
                   ? d.toLocaleDateString("en-US", {
                       month: "short",
@@ -228,6 +248,7 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
           </p>
         </div>
       </CardContent>
-    </Card>
+      </Card>
+    </div>
   )
 }

@@ -131,21 +131,21 @@ export function MainContent({
   const hasActiveFilters = searchQuery || selectedTags.length > 0 || dateFilter !== "all"
 
   return (
-    <div className="flex-1 flex flex-col bg-background">
-      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm">
+    <div className="flex-1 flex flex-col bg-background n8n-3d-container">
+      <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm n8n-glass n8n-3d-bg">
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-foreground text-balance bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+            <div className="n8n-depth-2">
+              <h1 className="n8n-3d-text text-3xl font-bold text-foreground text-balance bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 {selectedCollectionName}
               </h1>
               <div className="flex items-center gap-4 mt-2">
-                <p className="text-sm text-muted-foreground">
+                <p className="n8n-3d-text text-sm text-muted-foreground">
                   {filteredBookmarks.length} bookmark{filteredBookmarks.length !== 1 ? "s" : ""}
                   {filteredBookmarks.length !== bookmarks.length && ` of ${bookmarks.length} total`}
                 </p>
                 {filteredBookmarks.length > 0 && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground n8n-3d-text">
                     <span>•</span>
                     <span>{filteredBookmarks.filter((b) => b.tags.length > 0).length} tagged</span>
                     <span>•</span>
@@ -154,11 +154,11 @@ export function MainContent({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 n8n-depth-3">
               {/* <ThemeToggle /> */}
               <Button
                 onClick={onAddBookmark}
-                className="bg-primary hover:bg-primary/90  text-primary-foreground shadow-lg hover:shadow-2xl transition-all duration-200"
+                className="n8n-3d-button bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-2xl transition-all duration-200 n8n-glow n8n-interactive-3d"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Bookmark
@@ -166,17 +166,17 @@ export function MainContent({
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-1/2  transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <div className="flex items-center gap-4 n8n-depth-2">
+            <div className="relative flex-1 max-w-md n8n-3d-container">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground n8n-3d-text" />
               <Input
                 ref={searchInputRef}
                 placeholder="Search bookmarks... (⌘K)"
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
-                className="pl-10 pr-16 bg-background/50 rounded-xl border-border/50 focus:bg-background focus:border-primary/50 transition-all duration-200"
+                className="n8n-glass pl-10 pr-16 bg-background/50 rounded-xl border-border/50 focus:bg-background focus:border-primary/50 transition-all duration-200 n8n-interactive-3d"
               />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-xs text-muted-foreground">
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-xs text-muted-foreground n8n-3d-text">
                 <Command className="w-3 h-3" />
                 <span>K</span>
               </div>
@@ -187,26 +187,26 @@ export function MainContent({
               size="sm"
               onClick={() => setShowFilters(!showFilters)}
               className={cn(
-                "transition-all duration-200 border-border/50 hover:border-primary/50",
-                showFilters && "bg-accent text-accent-foreground border-primary/50",
-                hasActiveFilters && "border-primary text-primary bg-primary/5",
+                "n8n-3d-button transition-all duration-200 border-border/50 hover:border-primary/50 n8n-interactive-3d",
+                showFilters && "bg-accent text-accent-foreground border-primary/50 n8n-glow-accent",
+                hasActiveFilters && "border-primary text-primary bg-primary/5 n8n-glow",
               )}
             >
               <Filter className="w-4 h-4 mr-2" />
               Filters
               {hasActiveFilters && (
-                <span className="ml-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center">
+                <span className="ml-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center n8n-3d-text">
                   {(searchQuery ? 1 : 0) + selectedTags.length + (dateFilter !== "all" ? 1 : 0)}
                 </span>
               )}
             </Button>
 
-            <div className="flex items-center gap-1 border border-border/50 rounded-lg p-1 bg-background/50">
+            <div className="flex items-center gap-1 border border-border/50 rounded-lg p-1 bg-background/50 n8n-glass n8n-3d-container">
               <Button
                 variant={viewMode === "masonry" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => onViewModeChange("masonry" as ViewMode)}
-                className="h-8 w-8 p-0"
+                className="n8n-3d-button h-8 w-8 p-0 n8n-interactive-3d"
                 title="Masonry view"
               >
                 <LayoutGrid className="w-4 h-4" />
@@ -215,7 +215,7 @@ export function MainContent({
                 variant={viewMode === "grid" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => onViewModeChange("grid")}
-                className="h-8 w-8 p-0"
+                className="n8n-3d-button h-8 w-8 p-0 n8n-interactive-3d"
                 title="Grid view (⌘⇧V)"
               >
                 <Grid3X3 className="w-4 h-4" />
@@ -224,7 +224,7 @@ export function MainContent({
                 variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => onViewModeChange("list")}
-                className="h-8 w-8 p-0"
+                className="n8n-3d-button h-8 w-8 p-0 n8n-interactive-3d"
                 title="List view (⌘⇧V)"
               >
                 <List className="w-4 h-4" />
@@ -234,11 +234,11 @@ export function MainContent({
 
           {/* Filters Panel */}
           {showFilters && (
-            <div className="mt-4 p-4 bg-muted/50 backdrop-blur-sm rounded-lg space-y-4 animate-in slide-in-from-top-2 duration-200 border border-border/50">
+            <div className="mt-4 p-4 bg-muted/50 backdrop-blur-sm rounded-lg space-y-4 animate-in slide-in-from-top-2 duration-200 border border-border/50 n8n-glass n8n-3d-container n8n-depth-2">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium">Filters</h3>
                 {hasActiveFilters && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters}>
+                  <Button variant="ghost" size="sm" onClick={clearFilters} className="n8n-3d-button n8n-interactive-3d">
                     Clear all
                   </Button>
                 )}
@@ -247,26 +247,26 @@ export function MainContent({
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Date Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
+                  <label className="n8n-3d-text text-sm font-medium flex items-center gap-2">
                     <Calendar className="w-4 h-4" />
                     Date Range
                   </label>
                   <Select value={dateFilter} onValueChange={onDateFilterChange}>
-                    <SelectTrigger>
+                    <SelectTrigger className="n8n-glass n8n-interactive-3d">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Time</SelectItem>
-                      <SelectItem value="today">Today</SelectItem>
-                      <SelectItem value="week">This Week</SelectItem>
-                      <SelectItem value="month">This Month</SelectItem>
+                    <SelectContent className="n8n-glass">
+                      <SelectItem value="all" className="n8n-interactive-3d">All Time</SelectItem>
+                      <SelectItem value="today" className="n8n-interactive-3d">Today</SelectItem>
+                      <SelectItem value="week" className="n8n-interactive-3d">This Week</SelectItem>
+                      <SelectItem value="month" className="n8n-interactive-3d">This Month</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 {/* Tags Filter */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium flex items-center gap-2">
+                  <label className="n8n-3d-text text-sm font-medium flex items-center gap-2">
                     <Tag className="w-4 h-4" />
                     Tags ({selectedTags.length} selected)
                   </label>
@@ -275,7 +275,10 @@ export function MainContent({
                       <Badge
                         key={tag}
                         variant={selectedTags.includes(tag) ? "default" : "outline"}
-                        className="cursor-pointer hover:bg-primary/20 transition-colors"
+                        className={cn(
+                          "n8n-3d-button cursor-pointer hover:bg-primary/20 transition-colors n8n-interactive-3d",
+                          selectedTags.includes(tag) && "n8n-glow"
+                        )}
                         onClick={() => handleTagToggle(tag)}
                       >
                         {tag}
@@ -289,7 +292,7 @@ export function MainContent({
         </div>
       </div>
 
-      <div className="flex-1 p-6 bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="flex-1 p-6 bg-gradient-to-br from-background via-background to-muted/20 n8n-3d-bg n8n-parallax">
         {filteredBookmarks.length === 0 ? (
           <EmptyState
             type={hasActiveFilters ? "no-results" : bookmarks.length === 0 ? "no-bookmarks" : "no-collection"}
@@ -299,9 +302,15 @@ export function MainContent({
         ) : viewMode === "masonry" ? (
           <MasonryGrid bookmarks={filteredBookmarks} onEdit={onEditBookmark} onDelete={onDeleteBookmark} />
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1  md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredBookmarks.map((bookmark) => (
-              <BookmarkCard key={bookmark.id} bookmark={bookmark} onEdit={onEditBookmark} onDelete={onDeleteBookmark} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 n8n-3d-container">
+            {filteredBookmarks.map((bookmark, index) => (
+              <div 
+                key={bookmark.id} 
+                className="n8n-float" 
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <BookmarkCard bookmark={bookmark} onEdit={onEditBookmark} onDelete={onDeleteBookmark} />
+              </div>
             ))}
           </div>
         ) : (

@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge"
 import type { Bookmark, Collection } from "@/types/bookmark"
 import { X, Plus, Globe, Loader2 } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { extractThumbnailForUrl } from "@/hooks/use-thumbnail"
 
 interface BookmarkModalProps {
   isOpen: boolean
@@ -33,6 +34,8 @@ export function BookmarkModal({ isOpen, onClose, onSave, collections, editingBoo
   const [tagInput, setTagInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [urlError, setUrlError] = useState("")
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
+  const [isExtractingThumbnail, setIsExtractingThumbnail] = useState(false)
 
   // Reset form when modal opens/closes or editing bookmark changes
   useEffect(() => {
@@ -72,12 +75,28 @@ export function BookmarkModal({ isOpen, onClose, onSave, collections, editingBoo
     }
   }
 
-  const handleUrlChange = (url: string) => {
+  const handleUrlChange = async (url: string) => {
     setFormData({ ...formData, url })
     if (url && !validateUrl(url)) {
       setUrlError("Please enter a valid URL")
     } else {
       setUrlError("")
+      
+      // Extract thumbnail when URL changes
+      if (url && validateUrl(url)) {
+        setIsExtractingThumbnail(true)
+        try {
+          const thumbnail = await extractThumbnailForUrl(url)
+          setThumbnailUrl(thumbnail)
+        } catch (error) {
+          console.error("Failed to extract thumbnail:", error)
+          setThumbnailUrl(null)
+        } finally {
+          setIsExtractingThumbnail(false)
+        }
+      } else {
+        setThumbnailUrl(null)
+      }
     }
   }
 
@@ -140,6 +159,7 @@ export function BookmarkModal({ isOpen, onClose, onSave, collections, editingBoo
       collectionId: formData.collectionId,
       tags: formData.tags,
       favicon: `https://www.google.com/s2/favicons?domain=${new URL(formData.url).hostname}&sz=32`,
+      thumbnailUrl: thumbnailUrl || undefined,
     }
 
     onSave(bookmarkData)
@@ -186,6 +206,28 @@ export function BookmarkModal({ isOpen, onClose, onSave, collections, editingBoo
               </Button>
             </div>
           </div>
+
+          {/* Thumbnail Preview */}
+          {(thumbnailUrl || isExtractingThumbnail) && (
+            <div className="space-y-2">
+              <Label className="text-sm font-medium">Thumbnail Preview</Label>
+              <div className="relative w-full h-32 rounded-lg overflow-hidden border border-border/50">
+                {isExtractingThumbnail ? (
+                  <div className="flex items-center justify-center h-full bg-muted/50">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-sm text-muted-foreground">Extracting thumbnail...</span>
+                  </div>
+                ) : thumbnailUrl ? (
+                  <img
+                    src={thumbnailUrl}
+                    alt="Thumbnail preview"
+                    className="w-full h-full object-cover"
+                    onError={() => setThumbnailUrl(null)}
+                  />
+                ) : null}
+              </div>
+            </div>
+          )}
 
           {/* Title Field */}
           <div className="space-y-2">

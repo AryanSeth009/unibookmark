@@ -86,7 +86,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { title, url, description, collection_id, tags, favicon_url } = body
+    const { title, url, description, collection_id, tags, favicon_url, thumbnail_url } = body
 
     if (!title || !url) {
       return NextResponse.json({ error: "Title and URL are required" }, { status: 400 })
@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
       collection_id: collection_id || null,
       tags: tags || [],
       favicon_url: favicon_url || null,
+      thumbnail_url: thumbnail_url || null,
       user_id: user.id,
     }
 

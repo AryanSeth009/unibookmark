@@ -20,6 +20,7 @@ function transformBookmark(raw: any): Bookmark {
     tags: Array.isArray(raw.tags) ? raw.tags : [],
     createdAt: raw.created_at ? new Date(raw.created_at) : new Date(),
     favicon: raw.favicon_url ?? undefined,
+    thumbnailUrl: raw.thumbnail_url ?? undefined,
   }
 }
 
@@ -57,6 +58,7 @@ export async function createBookmark(bookmarkData: {
   collection_id?: string
   tags?: string[]
   favicon_url?: string
+  thumbnail_url?: string
 }) {
   const response = await fetch("/api/bookmarks", {
     method: "POST",
@@ -83,6 +85,7 @@ export async function updateBookmark(
     collection_id?: string
     tags?: string[]
     is_favorite?: boolean
+    thumbnail_url?: string
   },
 ) {
   const response = await fetch(`/api/bookmarks/${id}`, {

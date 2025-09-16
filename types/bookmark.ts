@@ -7,6 +7,7 @@ export interface Bookmark {
   tags: string[]
   createdAt: Date
   favicon?: string
+  thumbnailUrl?: string
 }
 
 export interface Collection {

@@ -8,9 +8,11 @@ interface MasonryGridProps {
   bookmarks: Bookmark[]
   onEdit: (bookmark: Bookmark) => void
   onDelete: (bookmarkId: string) => void
+  onLikeToggle: (bookmarkId: string, isLiked: boolean) => void // New prop
+  onFavoriteToggle: (bookmarkId: string, isFavorite: boolean) => void // New prop
 }
 
-export function MasonryGrid({ bookmarks, onEdit, onDelete }: MasonryGridProps) {
+export function MasonryGrid({ bookmarks, onEdit, onDelete, onLikeToggle, onFavoriteToggle }: MasonryGridProps) {
   const [columns, setColumns] = useState(4)
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -41,7 +43,7 @@ export function MasonryGrid({ bookmarks, onEdit, onDelete }: MasonryGridProps) {
         <div key={columnIndex} className="flex-1 space-y-4">
           {columnBookmarks.map((bookmark) => (
             <div key={bookmark.id} className="break-inside-avoid">
-              <BookmarkCard bookmark={bookmark} onEdit={onEdit} onDelete={onDelete} />
+              <BookmarkCard bookmark={bookmark} onEdit={onEdit} onDelete={onDelete} onLikeToggle={onLikeToggle} onFavoriteToggle={onFavoriteToggle} />
             </div>
           ))}
         </div>

@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "Unibookmark.Ai - Intelligent Bookmark Manager",
+  title: "Unibookmark - Intelligent Bookmark Manager",
   description: "A modern, AI-powered bookmark manager with advanced organization and search capabilities",
   generator: "v0.app",
 }

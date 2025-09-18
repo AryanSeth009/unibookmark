@@ -21,9 +21,10 @@ interface BookmarkModalProps {
   onSave: (bookmark: Omit<Bookmark, "id" | "createdAt">) => void
   collections: Collection[]
   editingBookmark?: Bookmark | null
+  onAddCollection: (name: string, parentId?: string) => Promise<void>; // New prop for adding collections
 }
 
-export function BookmarkModal({ isOpen, onClose, onSave, collections, editingBookmark }: BookmarkModalProps) {
+export function BookmarkModal({ isOpen, onClose, onSave, collections, editingBookmark, onAddCollection }: BookmarkModalProps) {
   const [formData, setFormData] = useState({
     title: "",
     url: "",
@@ -36,6 +37,8 @@ export function BookmarkModal({ isOpen, onClose, onSave, collections, editingBoo
   const [urlError, setUrlError] = useState("")
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
   const [isExtractingThumbnail, setIsExtractingThumbnail] = useState(false)
+  const [isAddingCollectionLocal, setIsAddingCollectionLocal] = useState(false); // Local state for adding collection
+  const [newCollectionNameLocal, setNewCollectionNameLocal] = useState(""); // Local state for new collection name
 
   // Reset form when modal opens/closes or editing bookmark changes
   useEffect(() => {
@@ -57,7 +60,7 @@ export function BookmarkModal({ isOpen, onClose, onSave, collections, editingBoo
           title: currentTitle,
           url: currentUrl,
           description: "",
-          collectionId: collections.find((c) => c.id === "unsorted")?.id || collections[0]?.id || "",
+          collectionId: collections.length > 0 ? (collections.find((c) => c.id === "unsorted")?.id || collections[0]?.id) : "",
           tags: [],
         })
       }
@@ -262,21 +265,79 @@ export function BookmarkModal({ isOpen, onClose, onSave, collections, editingBoo
             <Label htmlFor="collection" className="text-sm font-medium">
               Collection *
             </Label>
-            <Select
-              value={formData.collectionId}
-              onValueChange={(value) => setFormData({ ...formData, collectionId: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a collection" />
-              </SelectTrigger>
-              <SelectContent>
-                {collections.map((collection) => (
-                  <SelectItem key={collection.id} value={collection.id}>
-                    {collection.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center gap-2">
+              <Select
+                value={formData.collectionId}
+                onValueChange={(value) => setFormData({ ...formData, collectionId: value })}
+                className="flex-1"
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a collection" />
+                </SelectTrigger>
+                <SelectContent>
+                  {collections.map((collection) => (
+                    <SelectItem key={collection.id} value={collection.id}>
+                      {collection.parentId ? <>&nbsp;&nbsp;&nbsp;&nbsp;{collection.name}</> : collection.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsAddingCollectionLocal(!isAddingCollectionLocal)}
+                className="px-3"
+              >
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            {isAddingCollectionLocal && (
+              <div className="flex gap-2 mt-2">
+                <Input
+                  placeholder="Collection name"
+                  value={newCollectionNameLocal}
+                  onChange={(e) => setNewCollectionNameLocal(e.target.value)}
+                  onKeyDown={async (e) => {
+                    if (e.key === "Enter" && newCollectionNameLocal.trim()) {
+                      e.preventDefault();
+                      // Decide whether to add as root or subcollection based on current selection
+                      if (formData.collectionId) {
+                        await onAddCollection(newCollectionNameLocal.trim(), formData.collectionId); // Add as subcollection
+                      } else {
+                        await onAddCollection(newCollectionNameLocal.trim(), undefined); // Add as root collection
+                      }
+                      setNewCollectionNameLocal("");
+                      setIsAddingCollectionLocal(false);
+                    }
+                  }}
+                  autoFocus
+                />
+                <Button
+                  onClick={async () => {
+                    if (newCollectionNameLocal.trim()) {
+                      await onAddCollection(newCollectionNameLocal.trim(), undefined); // Add as root collection
+                      setNewCollectionNameLocal("");
+                      setIsAddingCollectionLocal(false);
+                    }
+                  }}
+                  disabled={!newCollectionNameLocal.trim()}
+                >
+                  Add Root Collection
+                </Button>
+                <Button
+                  onClick={async () => {
+                    if (newCollectionNameLocal.trim()) {
+                      await onAddCollection(newCollectionNameLocal.trim(), formData.collectionId); // Add as subcollection
+                      setNewCollectionNameLocal("");
+                      setIsAddingCollectionLocal(false);
+                    }
+                  }}
+                  disabled={!newCollectionNameLocal.trim() || !formData.collectionId}
+                >
+                  Add Subcollection
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Tags Field */}

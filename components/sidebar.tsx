@@ -19,25 +19,35 @@ import {
   Hash,
   Tag,
   Link,
+  CreditCard,
+  ChevronRight,
+  ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { UserProfileSection } from "@/components/user-profile-section";
 import { mutate as swrMutate } from "swr";
-import { updateCollection, deleteCollection } from "@/hooks/use-collections";
+import { useCollections } from "@/hooks/use-collections";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreVertical } from "lucide-react";
 import { ThemeToggle } from "./theme-toggle";
+import { useProfile } from "@/hooks/use-profile";
+import { createClient } from "@/lib/supabase/client";
+import { useRouter } from "next/navigation";
+import { useToast } from "@/hooks/use-toast";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { User, Settings, LogOut } from "lucide-react";
 
 interface SidebarProps {
   collections: Collection[];
   selectedCollection: string;
   onSelectCollection: (collectionId: string) => void;
-  onAddCollection: (name: string) => void;
+  onAddCollection: (name: string, parentId?: string) => Promise<void>;
 }
 
 const collectionIcons = {
@@ -88,20 +98,24 @@ export function Sidebar({
     new Set(["entertainment", "ecommerce", "socials", "chats"])
   );
 
-  const handleAddCollection = () => {
+  const handleAddCollection = (parentId?: string) => {
     if (newCollectionName.trim()) {
-      onAddCollection(newCollectionName.trim());
+      onAddCollection(newCollectionName.trim(), parentId);
       setNewCollectionName("");
       setIsAddingCollection(false);
+      setAddingToParentId(undefined);
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const [addingToParentId, setAddingToParentId] = useState<string | undefined>();
+
+  const handleKeyPress = (e: React.KeyboardEvent, parentId?: string) => {
     if (e.key === "Enter") {
-      handleAddCollection();
+      handleAddCollection(parentId);
     } else if (e.key === "Escape") {
       setIsAddingCollection(false);
       setNewCollectionName("");
+      setAddingToParentId(undefined);
     }
   };
 
@@ -115,6 +129,41 @@ export function Sidebar({
     setExpandedCollections(newExpanded);
   };
 
+  const { updateCollection, deleteCollection } = useCollections();
+
+  const { profile, isLoading: isProfileLoading } = useProfile();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signOut();
+
+      if (error) throw error;
+
+      router.push("/auth/login");
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to log out. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
+
+  const initials = profile?.full_name
+    ? profile.full_name
+        .split(" ")
+        .map((n: string) => n[0])
+        .join("")
+        .toUpperCase()
+    : profile?.email?.[0]?.toUpperCase() || "U";
+
   return (
     <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="p-4 border-b border-sidebar-border/50">
@@ -122,8 +171,10 @@ export function Sidebar({
           <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
             <Bookmark className="w-3 h-3 text-primary-foreground" />
           </div>
-          <h1 className="font-semibold text-sidebar-foreground">
-            Unibookmark.Ai
+          <h1 onClick={() => (window.location.href = "/")}
+            className="cursor-pointer font-semibold text-sidebar-foreground"
+          >
+            Unibookmark
           </h1>
           {/* <ThemeToggle className="pl-2 p-0  hover:bg-sidebar-accent"  placeholder="Theme"/> */}
         </div>
@@ -131,40 +182,6 @@ export function Sidebar({
 
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-6">
-          {/* All Bookmarks Section */}
-          <div className="space-y-1">
-            {collections
-              .filter((col) => col.id === "all")
-              .map((collection) => {
-                const Icon = Bookmark;
-                return (
-                  <button
-                    key={collection.id}
-                    onClick={() => onSelectCollection(collection.id)}
-                    className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 text-left",
-                      selectedCollection === collection.id
-                        ? "bg-primary text-primary-foreground border border-primary/20"
-                        : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    )}
-                  >
-                    {renderCollectionIcon(
-                      collection.icon,
-                      collection.color,
-                      Icon
-                    )}
-                    <span className="flex-1">{collection.name}</span>
-                    {typeof collection.count === "number" &&
-                      collection.count > 0 && (
-                        <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                          {collection.count}
-                        </span>
-                      )}
-                  </button>
-                );
-              })}
-          </div>
-
           {/* Collections Section */}
           <div>
             <div className="flex items-center justify-between mb-3">
@@ -182,112 +199,203 @@ export function Sidebar({
             </div>
 
             <div className="space-y-1">
-              {collections
-                .filter((col) => col.id !== "all")
-                .map((collection) => {
-                  const Icon =
-                    collectionIcons[
-                      collection.id as keyof typeof collectionIcons
-                    ] || Tag;
+              {collections.map((collection) => {
+                const isAllBookmarks = collection.id === "all";
+                const subcollections = isAllBookmarks
+                  ? []
+                  : collection.children || []; // Ensure All Bookmarks has no visible subcollections
+                const isExpanded = expandedCollections.has(collection.id);
+                const Icon =
+                  (isAllBookmarks
+                    ? Bookmark
+                    : collectionIcons[
+                        collection.id as keyof typeof collectionIcons
+                      ]) || Tag;
 
-                  return (
-                    <div
-                      key={collection.id}
-                      className="group flex items-center"
-                    >
-                      <button
-                        onClick={() => onSelectCollection(collection.id)}
-                        className={cn(
-                          "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 text-left",
-                          selectedCollection === collection.id
-                            ? "bg-primary text-primary-foreground border border-primary/20"
-                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                        )}
-                      >
-                        {renderCollectionIcon(
-                          collection.icon,
-                          collection.color,
-                          Icon
-                        )}
-                        <span className="flex-1">{collection.name}</span>
-                        {typeof collection.count === "number" &&
-                          collection.count > 0 && (
-                            <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                              {collection.count}
+                return (
+                  <div key={collection.id} className="w-full">
+                    <div className="group flex flex-col">
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => {
+                            onSelectCollection(collection.id);
+                            if (subcollections.length > 0) {
+                              toggleCollection(collection.id);
+                            }
+                          }}
+                          className={cn(
+                            "flex-1 flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 text-left",
+                            selectedCollection === collection.id
+                              ? "bg-primary text-primary-foreground border border-primary/20"
+                              : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                          )}
+                        >
+                          {renderCollectionIcon(
+                            collection.icon,
+                            collection.color,
+                            Icon
+                          )}
+                          <span className="flex-1">{collection.name}</span>
+                          {subcollections.length > 0 && (
+                            <span
+                              className={cn(
+                                "ml-auto p-1 rounded-md hover:bg-sidebar-accent",
+                                "transition-transform duration-200",
+                                isExpanded ? "rotate-90" : "rotate-0"
+                              )}
+                            >
+                              <ChevronRight className="h-4 w-4" />
                             </span>
                           )}
-                      </button>
+                          {typeof collection.count === "number" &&
+                            collection.count > 0 && (
+                              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                {collection.count}
+                              </span>
+                            )}
+                        </button>
 
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            aria-label="Collection actions"
-                            className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-sidebar-accent ml-1 mr-1"
-                          >
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-40">
-                          <DropdownMenuItem
-                            onClick={async () => {
-                              const name = window.prompt(
-                                "Rename collection",
-                                collection.name
-                              );
-                              if (!name || name.trim() === collection.name)
-                                return;
-                              try {
-                                await updateCollection(collection.id, {
-                                  name: name.trim(),
-                                });
-                                await swrMutate("/api/collections");
-                              } catch (e) {
-                                console.error("Rename failed", e);
-                              }
-                            }}
-                          >
-                            Rename
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={async () => {
-                              if (
-                                !window.confirm(
-                                  `Delete collection "${collection.name}"?`
-                                )
-                              )
-                                return;
-                              try {
-                                await deleteCollection(collection.id);
-                                if (selectedCollection === collection.id)
-                                  onSelectCollection("all");
-                                await swrMutate("/api/collections");
-                              } catch (e) {
-                                console.error("Delete failed", e);
-                              }
-                            }}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button
+                              aria-label="Collection actions"
+                              className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-sidebar-accent ml-1 mr-1"
+                            >
+                              <MoreVertical className="w-4 h-4" />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem
+                              onClick={async () => {
+                                const name = window.prompt(
+                                  "Rename collection",
+                                  collection.name
+                                );
+                                if (!name || name.trim() === collection.name)
+                                  return;
+                                try {
+                                  await updateCollection(collection.id, {
+                                    name: name.trim(),
+                                  });
+                                  await swrMutate("/api/collections");
+                                } catch (e) {
+                                  console.error("Rename failed", e);
+                                }
+                              }}
+                            >
+                              Rename
+                            </DropdownMenuItem>
+                            {!isAllBookmarks && (
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={async () => {
+                                  if (
+                                    !window.confirm(
+                                      `Delete collection "${collection.name}"?`
+                                    )
+                                  )
+                                    return;
+                                  try {
+                                    await deleteCollection(collection.id);
+                                    if (selectedCollection === collection.id)
+                                      onSelectCollection("all");
+                                    await swrMutate("/api/collections");
+                                  } catch (e) {
+                                    console.error("Delete failed", e);
+                                  }
+                                }}
+                              >
+                                Delete
+                              </DropdownMenuItem>
+                            )}
+                            {!isAllBookmarks && isExpanded && (
+                              <DropdownMenuItem
+                                onClick={async () => {
+                                  setAddingToParentId(collection.id);
+                                  setIsAddingCollection(true);
+                                  // Focus the input field after a small delay to ensure it's rendered
+                                  setTimeout(() => {
+                                    const input = document.querySelector(
+                                      ".sidebar-input"
+                                    ) as HTMLInputElement;
+                                    input?.focus();
+                                  }, 100);
+                                }}
+                              >
+                                Add Subcollection
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+
+                      {subcollections.length > 0 && isExpanded && (
+                        <div className="ml-6 space-y-1 mt-1">
+                          {subcollections.map((sub) => (
+                            <button
+                              key={sub.id}
+                              onClick={() => onSelectCollection(sub.id)}
+                              className={cn(
+                                "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 text-left",
+                                selectedCollection === sub.id
+                                  ? "bg-primary/10 text-primary-foreground border border-primary/20"
+                                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                              )}
+                            >
+                              <span className="w-4 h-4 flex items-center justify-center">
+                                <svg
+                                  width="6"
+                                  height="6"
+                                  viewBox="0 0 6 6"
+                                  fill="none"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                >
+                                  <path
+                                    d="M1 3H5"
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                  <path
+                                    d="M3 5V1"
+                                    stroke="currentColor"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                </svg>
+                              </span>
+                              <span className="flex-1">{sub.name}</span>
+                              {typeof sub.count === "number" &&
+                                sub.count > 0 && (
+                                  <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                    {sub.count}
+                                  </span>
+                                )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  );
-                })}
+                  </div>
+                );
+              })}
 
               {isAddingCollection && (
                 <div className="px-3 py-2">
                   <Input
                     value={newCollectionName}
                     onChange={(e) => setNewCollectionName(e.target.value)}
-                    onKeyDown={handleKeyPress}
+                    onKeyDown={(e) => handleKeyPress(e, addingToParentId)}
                     onBlur={() => {
                       if (!newCollectionName.trim()) {
                         setIsAddingCollection(false);
+                        setAddingToParentId(undefined);
+                      } else {
+                        handleAddCollection(addingToParentId);
                       }
                     }}
-                    placeholder="Collection name"
-                    className="h-8 text-sm bg-input border-border"
+                    placeholder="New collection name"
+                    className="h-8"
                     autoFocus
                   />
                 </div>
@@ -306,18 +414,92 @@ export function Sidebar({
               </button>
               <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-left transition-all duration-200">
                 <Link className="w-4 h-4 flex-shrink-0" />
-                <span>Broken Links</span>
+                <span>Save for later</span>
               </button>
+              <a
+                href="/pricing"
+                className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-left transition-all duration-200"
+              >
+                <CreditCard className="w-4 h-4 flex-shrink-0" />
+                <span>Pricing</span>
+              </a>
             </div>
           </div>
         </div>
       </ScrollArea>
-      <div className="p-2 border-t flex justify-center items-center gap-1 border-sidebar-border/50">
-        <ThemeToggle className="6 p-0  hover:bg-sidebar-accent"  placeholder="Theme"/>
-        {/* <h2 className="text-sm font-medium text-muted-foreground">Theme</h2> */}
+      <div className="p-2 border-t flex items-center justify-between border-sidebar-border/50">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full flex items-center gap-3 px-3 py-2 h-auto hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            >
+              <Avatar className="w-8 h-8">
+                <AvatarImage src={profile?.avatar_url || "/placeholder.svg"} />
+                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 text-left flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-sidebar-foreground">
+                    {profile?.full_name || "User"}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    Free
+                  </p>
+                </div>
+                <Button variant="secondary" size="sm" className="h-7 text-xs">
+                  Upgrade
+                </Button>
+              </div>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="end" sideOffset={10} className="w-56 z-50 bg-white dark:bg-popover text-gray-900 dark:text-popover-foreground border-gray-200 dark:border-border">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex items-center gap-3">
+                <Avatar className="w-8 h-8">
+                  <AvatarImage src={profile?.avatar_url || "/placeholder.svg"} />
+                  <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="text-sm font-medium">{profile?.email}</p>
+                </div>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-gray-200 dark:bg-border"/>
+            <DropdownMenuItem className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-accent focus:bg-gray-100 dark:focus:bg-accent">
+              <User className="w-4 h-4" />
+              Upgrade plan
+            </DropdownMenuItem>
+            <DropdownMenuItem className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-accent focus:bg-gray-100 dark:focus:bg-accent">
+              <Settings className="w-4 h-4" />
+              Personalization
+            </DropdownMenuItem>
+            <DropdownMenuItem className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-accent focus:bg-gray-100 dark:focus:bg-accent">
+              <Settings className="w-4 h-4" />
+              Settings
+            </DropdownMenuItem>
+            <DropdownMenuItem className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-accent focus:bg-gray-100 dark:focus:bg-accent">
+              <User className="w-4 h-4" />
+              Help
+            </DropdownMenuItem>
+            <DropdownMenuSeparator className="bg-gray-200 dark:bg-border"/>
+            <DropdownMenuItem
+              onClick={handleLogout}
+              disabled={isLoggingOut}
+              className="text-destructive focus:text-destructive flex items-center gap-2 hover:bg-red-50 dark:hover:bg-destructive/10 focus:bg-red-50 dark:focus:bg-destructive/10"
+            >
+              <LogOut className="w-4 h-4" />
+              {isLoggingOut ? "Logging out..." : "Log out"}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        <ThemeToggle />
       </div>
-
-      <UserProfileSection />
     </div>
   );
 }

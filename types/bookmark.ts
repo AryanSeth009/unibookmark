@@ -8,6 +8,9 @@ export interface Bookmark {
   createdAt: Date
   favicon?: string
   thumbnailUrl?: string
+  isFavorite?: boolean
+  likesCount?: number
+  isLiked?: boolean
 }
 
 export interface Collection {
@@ -18,6 +21,8 @@ export interface Collection {
   icon?: string
   color?: string
   description?: string
+  parentId?: string
+  children?: Collection[]
 }
 
 export type ViewMode = "grid" | "list" | "masonry"

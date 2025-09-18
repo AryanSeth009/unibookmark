@@ -6,6 +6,7 @@ class SmartBookmarkPopup {
     this.collections = []
     this.recentBookmarks = []
     this.isAuthenticated = false
+    this.searchTimeout = null
 
     this.init()
   }
@@ -276,16 +277,23 @@ class SmartBookmarkPopup {
       return
     }
 
-    try {
-      const response = await this.makeAuthenticatedRequest(`/api/bookmarks/search?q=${encodeURIComponent(query)}`)
-      if (response.ok) {
-        const results = await response.json()
-        this.displaySearchResults(results)
-      }
-    } catch (error) {
-      console.error("Search error:", error)
-      document.getElementById("searchResults").innerHTML = '<div class="loading">Search failed</div>'
+    // Debounce search to avoid repeated loading on each letter input
+    if (this.searchTimeout) {
+      clearTimeout(this.searchTimeout)
     }
+
+    this.searchTimeout = setTimeout(async () => {
+      try {
+        const response = await this.makeAuthenticatedRequest(`/api/bookmarks/search?q=${encodeURIComponent(query)}`)
+        if (response.ok) {
+          const results = await response.json()
+          this.displaySearchResults(results)
+        }
+      } catch (error) {
+        console.error("Search error:", error)
+        document.getElementById("searchResults").innerHTML = '<div class="loading">Search failed</div>'
+      }
+    }, 300) // 300ms debounce delay
   }
 
   displaySearchResults(results) {

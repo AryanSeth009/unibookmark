@@ -99,7 +99,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { name, description, color, icon } = body;
+    const { name, description, color, icon, parentId } = body;
 
     if (!name) {
       return NextResponse.json({ error: "Collection name is required" }, { status: 400 });
@@ -109,9 +109,9 @@ export async function POST(request: NextRequest) {
       name,
       description: description || null,
       color: color || "#6c47ff",
-      // --- UPDATED: Default icon for new collections is now a URL ---
-      icon: icon || "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/folder.svg", 
+      icon: icon || "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/folder.svg",
       user_id: user.id,
+      parent_id: parentId || null,
     };
 
     const { data: collection, error } = await supabase.from("collections").insert(collectionData).select().single();

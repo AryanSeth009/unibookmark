@@ -21,12 +21,15 @@ function transformBookmark(raw: any): Bookmark {
     createdAt: raw.created_at ? new Date(raw.created_at) : new Date(),
     favicon: raw.favicon_url ?? undefined,
     thumbnailUrl: raw.thumbnail_url ?? undefined,
+    isFavorite: raw.is_favorite ?? false,
+    likesCount: raw.likes_count ?? 0,
+    isLiked: raw.is_liked ?? false,
   }
 }
 
-export function useBookmarks(collectionId?: string, search?: string, tags?: string[]) {
+export function useBookmarks(collectionId?: string, search?: string, tags?: string[], currentUserId?: string) {
   const params = new URLSearchParams()
-  if (collectionId && collectionId !== "all") params.set("collection", collectionId)
+  if (collectionId) params.set("collection", collectionId)
   if (search) params.set("search", search)
   if (tags && tags.length > 0) params.set("tags", tags.join(","))
 
@@ -112,6 +115,38 @@ export async function deleteBookmark(id: string) {
 
   if (!response.ok) {
     throw new Error("Failed to delete bookmark")
+  }
+
+  return response.json()
+}
+
+export async function likeBookmark(id: string) {
+  const response = await fetch(`/api/bookmarks/${id}/like`, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to like bookmark")
+  }
+
+  return response.json()
+}
+
+export async function unlikeBookmark(id: string) {
+  const response = await fetch(`/api/bookmarks/${id}/like`, {
+    method: "DELETE",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+
+  if (!response.ok) {
+    throw new Error("Failed to unlike bookmark")
   }
 
   return response.json()

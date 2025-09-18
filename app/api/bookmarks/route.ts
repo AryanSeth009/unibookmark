@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
           name,
           color,
           icon
-        )
+        ),
+        is_favorite
       `)
       .eq("user_id", user.id)
       
@@ -60,14 +61,29 @@ export async function GET(request: NextRequest) {
     // Pagination
     query = query.range(offset, offset + limit - 1)
 
-    const { data: bookmarks, error } = await query
+    const { data: bookmarks, error: fetchError } = await query
 
-    if (error) {
-      console.error("Database error:", error)
+    if (fetchError) {
+      console.error("Database error:", fetchError)
       return NextResponse.json({ error: "Failed to fetch bookmarks" }, { status: 500 })
     }
 
-    return NextResponse.json(bookmarks)
+    const bookmarksWithEngagement = await Promise.all(
+      bookmarks.map(async (bookmark) => {
+        const { data: engagement, error: engagementError } = await supabase.rpc(
+          'get_bookmark_engagement', 
+          { bookmark_id_param: bookmark.id, user_id_param: user.id }
+        ).single()
+
+        if (engagementError) {
+          console.warn(`Failed to fetch engagement for bookmark ${bookmark.id}:`, engagementError)
+          return { ...bookmark, likes_count: 0, is_liked: false }
+        }
+        return { ...bookmark, likes_count: engagement.likes_count, is_liked: engagement.is_liked }
+      })
+    )
+
+    return NextResponse.json(bookmarksWithEngagement)
   } catch (error) {
     console.error("API error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })

@@ -3,15 +3,18 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Bookmark } from "@/types/bookmark"
-import { ExternalLink, MoreVertical, Edit, Trash2, Globe } from "lucide-react"
+import { ExternalLink, MoreVertical, Edit, Trash2, Globe, Heart, BookmarkIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface BookmarkListProps {
   bookmarks: Bookmark[]
   onEdit: (bookmark: Bookmark) => void
   onDelete: (bookmarkId: string) => void
+  onLikeToggle: (bookmarkId: string, isLiked: boolean) => void
+  onFavoriteToggle: (bookmarkId: string, isFavorite: boolean) => void
 }
 
-export function BookmarkList({ bookmarks, onEdit, onDelete }: BookmarkListProps) {
+export function BookmarkList({ bookmarks, onEdit, onDelete, onLikeToggle, onFavoriteToggle }: BookmarkListProps) {
   const handleVisit = (url: string) => {
     window.open(url, "_blank", "noopener,noreferrer")
   }
@@ -92,6 +95,34 @@ export function BookmarkList({ bookmarks, onEdit, onDelete }: BookmarkListProps)
 
               {/* Actions */}
               <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* Like Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn("h-8 px-3", bookmark.isLiked && "text-red-500")}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onLikeToggle(bookmark.id, bookmark.isLiked || false)
+                  }}
+                >
+                  <Heart className={cn("w-4 h-4 mr-1", bookmark.isLiked && "fill-current")} />
+                  {bookmark.likesCount || 0}
+                </Button>
+
+                {/* Favorite Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn("h-8 px-3", bookmark.isFavorite && "text-primary")}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onFavoriteToggle(bookmark.id, bookmark.isFavorite || false)
+                  }}
+                >
+                  <BookmarkIcon className={cn("w-4 h-4 mr-1", bookmark.isFavorite && "fill-current")} />
+                  Save
+                </Button>
+
                 <Button variant="ghost" size="sm" onClick={() => handleVisit(bookmark.url)} className="h-8 px-3">
                   <ExternalLink className="w-4 h-4 mr-1" />
                   Visit

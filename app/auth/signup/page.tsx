@@ -67,10 +67,10 @@ export default function SignUpPage() {
         <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-blue-600 rounded-full blur-[100px] opacity-20" />
       </div>
 
-      <div className="w-full max-w-md bg-gray-900/50 backdrop-blur-xl border border-gray-800 p-8 rounded-2xl">
+      <div className="w-full  max-w-md bg-gray-800/10 backdrop-blur-xl border border-gray-800 p-8 rounded-2xl">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-400 bg-clip-text text-transparent mb-2">
-            SmartBookmark.AI
+            Unibookmark
           </h1>
           <h2 className="text-2xl font-bold text-white mb-2">Create an account</h2>
           <p className="text-gray-400">Join us to explore intelligent bookmarking</p>

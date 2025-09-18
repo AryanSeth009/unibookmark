@@ -15,13 +15,13 @@ interface BookmarkCardProps {
   bookmark: Bookmark
   onEdit: (bookmark: Bookmark) => void
   onDelete: (bookmarkId: string) => void
+  onLikeToggle: (bookmarkId: string, isLiked: boolean) => void // New prop for like toggle
+  onFavoriteToggle: (bookmarkId: string, isFavorite: boolean) => void // New prop for favorite toggle
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) {
+export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavoriteToggle }: BookmarkCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
-  const [isLiked, setIsLiked] = useState(false)
-  const [isSaved, setIsSaved] = useState(false)
   const { thumbnailUrl, isLoading: thumbnailLoading } = useThumbnail(bookmark.url)
 
   const handleVisit = () => {
@@ -185,15 +185,15 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
               className={cn(
                 "n8n-3d-button h-8 px-3 text-xs transition-all duration-200",
                 "opacity-0 group-hover:opacity-100 n8n-interactive-3d",
-                isLiked && "text-red-500 opacity-100 n8n-glow-accent",
+                bookmark.isLiked && "text-red-500 opacity-100 n8n-glow-accent", // Use bookmark.isLiked
               )}
               onClick={(e) => {
                 e.stopPropagation()
-                setIsLiked(!isLiked)
+                onLikeToggle(bookmark.id, bookmark.isLiked || false) // Call new prop
               }}
             >
-              <Heart className={cn("w-3 h-3 mr-1.5", isLiked && "fill-current")} />
-              Like
+              <Heart className={cn("w-3 h-3 mr-1.5", bookmark.isLiked && "fill-current")} />
+              {bookmark.likesCount || 0} Like
             </Button>
 
             <Button
@@ -202,14 +202,14 @@ export function BookmarkCard({ bookmark, onEdit, onDelete }: BookmarkCardProps) 
               className={cn(
                 "n8n-3d-button h-8 px-3 text-xs transition-all duration-200",
                 "opacity-0 group-hover:opacity-100 n8n-interactive-3d",
-                isSaved && "text-primary opacity-100 n8n-glow",
+                bookmark.isFavorite && "text-primary opacity-100 n8n-glow", // Use bookmark.isFavorite
               )}
               onClick={(e) => {
                 e.stopPropagation()
-                setIsSaved(!isSaved)
+                onFavoriteToggle(bookmark.id, bookmark.isFavorite || false) // Call new prop
               }}
             >
-              <BookmarkIcon className={cn("w-3 h-3 mr-1.5", isSaved && "fill-current")} />
+              <BookmarkIcon className={cn("w-3 h-3 mr-1.5", bookmark.isFavorite && "fill-current")} />
               Save
             </Button>
           </div>

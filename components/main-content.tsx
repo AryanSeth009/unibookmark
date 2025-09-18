@@ -31,6 +31,8 @@ interface MainContentProps {
   onEditBookmark: (bookmark: Bookmark) => void
   onDeleteBookmark: (bookmarkId: string) => void
   searchInputRef?: React.RefObject<HTMLInputElement>
+  onLikeToggle: (bookmarkId: string, isLiked: boolean) => void
+  onFavoriteToggle: (bookmarkId: string, isFavorite: boolean) => void
 }
 
 export function MainContent({
@@ -49,6 +51,8 @@ export function MainContent({
   onEditBookmark,
   onDeleteBookmark,
   searchInputRef,
+  onLikeToggle,
+  onFavoriteToggle,
 }: MainContentProps) {
   const [showFilters, setShowFilters] = useState(false)
 
@@ -66,7 +70,7 @@ export function MainContent({
     let filtered = bookmarks
 
     // Filter by collection
-    if (selectedCollection !== "all") {
+    if (selectedCollection !== "all" && selectedCollection) {
       filtered = filtered.filter((bookmark) => bookmark.collectionId === selectedCollection)
     }
 
@@ -78,7 +82,8 @@ export function MainContent({
           bookmark.title.toLowerCase().includes(query) ||
           bookmark.url.toLowerCase().includes(query) ||
           bookmark.description?.toLowerCase().includes(query) ||
-          bookmark.tags.some((tag) => tag.toLowerCase().includes(query)),
+          bookmark.tags.some((tag) => tag.toLowerCase().includes(query)) ||
+          (selectedCollection === "all" || !selectedCollection)
       )
     }
 
@@ -136,7 +141,7 @@ export function MainContent({
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="n8n-depth-2">
-              <h1 className="n8n-3d-text text-3xl font-bold text-foreground text-balance bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              <h1 className="n8n-3d-text text-3xl font-bold text-balance bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 {selectedCollectionName}
               </h1>
               <div className="flex items-center gap-4 mt-2">
@@ -293,6 +298,7 @@ export function MainContent({
       </div>
 
       <div className="flex-1 p-6 bg-gradient-to-br from-background via-background to-muted/20 n8n-3d-bg n8n-parallax">
+        
         {filteredBookmarks.length === 0 ? (
           <EmptyState
             type={hasActiveFilters ? "no-results" : bookmarks.length === 0 ? "no-bookmarks" : "no-collection"}
@@ -300,7 +306,7 @@ export function MainContent({
             onClearFilters={hasActiveFilters ? clearFilters : undefined}
           />
         ) : viewMode === "masonry" ? (
-          <MasonryGrid bookmarks={filteredBookmarks} onEdit={onEditBookmark} onDelete={onDeleteBookmark} />
+          <MasonryGrid bookmarks={filteredBookmarks} onEdit={onEditBookmark} onDelete={onDeleteBookmark} onLikeToggle={onLikeToggle} onFavoriteToggle={onFavoriteToggle} />
         ) : viewMode === "grid" ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 n8n-3d-container">
             {filteredBookmarks.map((bookmark, index) => (
@@ -309,12 +315,12 @@ export function MainContent({
                 className="n8n-float" 
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <BookmarkCard bookmark={bookmark} onEdit={onEditBookmark} onDelete={onDeleteBookmark} />
+                <BookmarkCard bookmark={bookmark} onEdit={onEditBookmark} onDelete={onDeleteBookmark} onLikeToggle={onLikeToggle} onFavoriteToggle={onFavoriteToggle} />
               </div>
             ))}
           </div>
         ) : (
-          <BookmarkList bookmarks={filteredBookmarks} onEdit={onEditBookmark} onDelete={onDeleteBookmark} />
+          <BookmarkList bookmarks={filteredBookmarks} onEdit={onEditBookmark} onDelete={onDeleteBookmark} onLikeToggle={onLikeToggle} onFavoriteToggle={onFavoriteToggle} />
         )}
       </div>
     </div>

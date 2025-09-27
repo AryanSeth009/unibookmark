@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
@@ -16,6 +16,7 @@ import { useProfile } from "@/hooks/use-profile"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
+import randomProfile from 'random-profile-generator';
 
 interface UserProfileSectionProps {
   onLogout: () => void;
@@ -23,6 +24,21 @@ interface UserProfileSectionProps {
 
 export function UserProfileSection({ onLogout }: UserProfileSectionProps) {
   const { profile, isLoading } = useProfile()
+  const [randomUserData, setRandomUserData] = useState({
+    fullName: "",
+    avatar: "",
+  });
+
+  useEffect(() => {
+    if (!profile?.full_name) {
+      const newRandomProfile = randomProfile.profile();
+      setRandomUserData({
+        fullName: newRandomProfile.fullName,
+        avatar: newRandomProfile.avatar,
+      });
+    }
+  }, [profile]);
+
   // const [isLoggingOut, setIsLoggingOut] = useState(false) // No longer needed here
   // const router = useRouter()
   // const { toast } = useToast()
@@ -67,7 +83,7 @@ export function UserProfileSection({ onLogout }: UserProfileSectionProps) {
         .map((n: string) => n[0])
         .join("")
         .toUpperCase()
-    : profile?.email?.[0]?.toUpperCase() || "U"
+    : (randomUserData.fullName ? randomUserData.fullName.split(" ").map((n: string) => n[0]).join("").toUpperCase() : "U");
 
   return (
     <div className="user-profile-section p-2 border-t border-sidebar-border/50 relative z-50">
@@ -76,7 +92,7 @@ export function UserProfileSection({ onLogout }: UserProfileSectionProps) {
             className="w-full flex items-center gap-3 px-3 py-2 h-auto hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
             <Avatar className="w-8 h-8">
-              <AvatarImage src={profile?.avatar_url || "/placeholder.svg"} />
+              <AvatarImage src={profile?.avatar_url || randomUserData.avatar || "/placeholder.svg"} />
               <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                 {initials}
               </AvatarFallback>
@@ -84,15 +100,17 @@ export function UserProfileSection({ onLogout }: UserProfileSectionProps) {
             <div className="flex-1 w-16 text-left flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-sidebar-foreground">
-                  {profile?.full_name || "User"}
+                  {profile?.full_name || randomUserData.fullName || "User"}
                 </p>
                 <p className="text-xs text-muted-foreground truncate">
                   Free
                 </p>
               </div>
-              <Button variant="secondary" size="sm" className="h-7 text-xs">
+            <div className="w-16">
+            <Button variant="secondary" size="sm" className="h-7 text-xs">
                 Upgrade
               </Button>
+            </div>
             </div>
             <ChevronDown className="w-4 h-4 text-muted-foreground" />
         </Button>

@@ -25,6 +25,7 @@ export default function RootLayout({
           <Suspense fallback={null}>{children}</Suspense>
         </ThemeProvider>
         <Analytics />
+        <script src="https://www.youtube.com/iframe_api"></script>
       </body>
     </html>
   )

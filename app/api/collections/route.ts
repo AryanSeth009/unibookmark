@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
       { name: "Read Later", description: "Items to read later", color: "#6366f1", icon: "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/book-open.svg" },
       { name: "Inspiration & Ideas", description: "Creative sparks and ideas", color: "#f59e0b", icon: "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/lightbulb.svg" },
       { name: "Shopping List", description: "Products to buy", color: "#10b981", icon: "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/shopping-cart.svg" },
+      {name:"Other", description: "Other collections", color: "#6366f1", icon: "https://cdn.jsdelivr.net/npm/lucide-static@latest/icons/folder.svg" },
     ];
 
     // Ensure default collections exist for this user

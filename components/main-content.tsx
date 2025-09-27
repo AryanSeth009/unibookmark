@@ -1,5 +1,5 @@
 "use client"
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import type React from "react"
 
 import { Button } from "@/components/ui/button"
@@ -22,17 +22,21 @@ interface MainContentProps {
   searchQuery: string
   selectedTags: string[]
   dateFilter: DateFilter
-  viewMode: ViewMode
   onSearchChange: (query: string) => void
   onTagsChange: (tags: string[]) => void
   onDateFilterChange: (filter: DateFilter) => void
-  onViewModeChange: (mode: ViewMode) => void
   onAddBookmark: () => void
   onEditBookmark: (bookmark: Bookmark) => void
   onDeleteBookmark: (bookmarkId: string) => void
   searchInputRef?: React.RefObject<HTMLInputElement>
   onLikeToggle: (bookmarkId: string, isLiked: boolean) => void
   onFavoriteToggle: (bookmarkId: string, isFavorite: boolean) => void
+  onPlayMedia: (bookmark: Bookmark) => void // Changed prop name
+  flatCollections: Collection[]; // New prop
+  isPlaying: boolean; // New prop
+  onNextMedia: () => void; // New prop
+  onPreviousMedia: () => void; // New prop
+  onPlayAllMusic: (bookmarksToPlay: Bookmark[]) => void; // New prop for playing all music
 }
 
 export function MainContent({
@@ -42,19 +46,95 @@ export function MainContent({
   searchQuery,
   selectedTags,
   dateFilter,
-  viewMode,
   onSearchChange,
   onTagsChange,
   onDateFilterChange,
-  onViewModeChange,
   onAddBookmark,
   onEditBookmark,
   onDeleteBookmark,
   searchInputRef,
   onLikeToggle,
   onFavoriteToggle,
+  onPlayMedia,
+  flatCollections,
+  isPlaying,
+  onNextMedia,
+  onPreviousMedia,
+  onPlayAllMusic,
 }: MainContentProps) {
   const [showFilters, setShowFilters] = useState(false)
+  const [viewMode, setViewMode] = useState<ViewMode>("grid")
+  // Removed internal playlist state
+  // const [playingQueue, setPlayingQueue] = useState<Bookmark[]>([])
+  // const [currentPlayingIndex, setCurrentPlayingIndex] = useState(0)
+  // const [isPlayingAll, setIsPlayingAll] = useState(false)
+  // const [currentPlayingVideoId, setCurrentPlayingVideoId] = useState<string | null>(null)
+
+  // Removed getYouTubeVideoId and handlePlayAll
+  // Helper function to extract YouTube video ID
+  // const getYouTubeVideoId = (url: string): string | null => {
+  //   const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/;
+  //   const match = url.match(youtubeRegex);
+  //   if (match) {
+  //     const urlObj = new URL(url);
+  //     if (urlObj.hostname === 'music.youtube.com' || urlObj.hostname.endsWith('.youtube.com') || urlObj.hostname === 'youtu.be') {
+  //       return match[1];
+  //     }
+  //   }
+  //   return null;
+  // };
+
+  // Handle playing all bookmarks in a collection
+  // const handlePlayAll = (bookmarksToPlay: Bookmark[]) => {
+  //   const youtubeBookmarks = bookmarksToPlay.filter(b => getYouTubeVideoId(b.url));
+  //   if (youtubeBookmarks.length > 0) {
+  //     setPlayingQueue(youtubeBookmarks);
+  //     setCurrentPlayingIndex(0);
+  //     setIsPlayingAll(true);
+  //   }
+  // };
+
+  // Effect to play the next song in the queue
+  // useEffect(() => {
+  //   let timeoutId: NodeJS.Timeout | undefined;
+  // 
+  //   if (isPlayingAll && playingQueue.length > 0) {
+  //     if (currentPlayingIndex < playingQueue.length) {
+  //       const nextVideoId = getYouTubeVideoId(playingQueue[currentPlayingIndex].url);
+  //       if (nextVideoId && nextVideoId !== currentPlayingVideoId) {
+  //         setCurrentPlayingVideoId(nextVideoId);
+  //         onPlayYoutube(nextVideoId);
+  //       }
+  //       
+  //       timeoutId = setTimeout(() => {
+  //         setCurrentPlayingIndex(prevIndex => prevIndex + 1);
+  //       }, 5000);
+  //     } else if (currentPlayingIndex >= playingQueue.length) {
+  //       // All songs played, reset
+  //       setPlayingQueue([]);
+  //       setCurrentPlayingIndex(0);
+  //       setIsPlayingAll(false);
+  //       setCurrentPlayingVideoId(null);
+  //     } else {
+  //       // All songs played, reset
+  //       setPlayingQueue([]);
+  //       setCurrentPlayingIndex(0);
+  //       setIsPlayingAll(false);
+  //     }
+  //   }
+  // 
+  //   return () => {
+  //     if (timeoutId) {
+  //       clearTimeout(timeoutId);
+  //     }
+  //   };
+  // }, [isPlayingAll, playingQueue, currentPlayingIndex, onPlayYoutube, currentPlayingVideoId]);
+
+  // const stopAllPlayback = () => {
+  //   setPlayingQueue([]);
+  //   setCurrentPlayingIndex(0);
+  //   setIsPlayingAll(false);
+  // };
 
   // Get all unique tags from bookmarks
   const allTags = useMemo(() => {
@@ -117,7 +197,7 @@ export function MainContent({
     return filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }, [bookmarks, selectedCollection, searchQuery, selectedTags, dateFilter])
 
-  const selectedCollectionName = collections.find((c) => c.id === selectedCollection)?.name || "All Bookmarks"
+  const selectedCollectionName = flatCollections.find((c) => c.id === selectedCollection)?.name || "All Bookmarks"
 
   const handleTagToggle = (tag: string) => {
     if (selectedTags.includes(tag)) {
@@ -136,21 +216,21 @@ export function MainContent({
   const hasActiveFilters = searchQuery || selectedTags.length > 0 || dateFilter !== "all"
 
   return (
-    <div className="flex-1 flex flex-col bg-background n8n-3d-container">
+    <div className="flex-1 w-full flex flex-col bg-background n8n-3d-container">
       <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm n8n-glass n8n-3d-bg">
         <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex w-full items-center justify-between mb-6">
             <div className="n8n-depth-2">
               <h1 className="n8n-3d-text text-3xl font-bold text-balance bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
                 {selectedCollectionName}
               </h1>
               <div className="flex items-center gap-4 mt-2">
-                <p className="n8n-3d-text text-sm text-muted-foreground">
+                <p className="n8n-3d-text text-sm text-foreground">
                   {filteredBookmarks.length} bookmark{filteredBookmarks.length !== 1 ? "s" : ""}
                   {filteredBookmarks.length !== bookmarks.length && ` of ${bookmarks.length} total`}
                 </p>
                 {filteredBookmarks.length > 0 && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground n8n-3d-text">
+                  <div className="flex items-center gap-2 text-xs text-foreground n8n-3d-text">
                     <span>•</span>
                     <span>{filteredBookmarks.filter((b) => b.tags.length > 0).length} tagged</span>
                     <span>•</span>
@@ -173,7 +253,7 @@ export function MainContent({
 
           <div className="flex items-center gap-4 n8n-depth-2">
             <div className="relative flex-1 max-w-md n8n-3d-container">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground n8n-3d-text" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-foreground n8n-3d-text" />
               <Input
                 ref={searchInputRef}
                 placeholder="Search bookmarks... (⌘K)"
@@ -181,7 +261,7 @@ export function MainContent({
                 onChange={(e) => onSearchChange(e.target.value)}
                 className="n8n-glass pl-10 pr-16 bg-background/50 rounded-xl border-border/50 focus:bg-background focus:border-primary/50 transition-all duration-200 n8n-interactive-3d"
               />
-              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-xs text-muted-foreground n8n-3d-text">
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center gap-1 text-xs text-foreground n8n-3d-text">
                 <Command className="w-3 h-3" />
                 <span>K</span>
               </div>
@@ -197,7 +277,7 @@ export function MainContent({
                 hasActiveFilters && "border-primary text-primary bg-primary/5 n8n-glow",
               )}
             >
-              <Filter className="w-4 h-4 mr-2" />
+              <Filter className={cn("w-4 h-4 mr-2", showFilters && "text-foreground")} />
               Filters
               {hasActiveFilters && (
                 <span className="ml-2 bg-primary text-primary-foreground rounded-full w-5 h-5 text-xs flex items-center justify-center n8n-3d-text">
@@ -207,19 +287,19 @@ export function MainContent({
             </Button>
 
             <div className="flex items-center gap-1 border border-border/50 rounded-lg p-1 bg-background/50 n8n-glass n8n-3d-container">
-              <Button
+              {/* <Button
                 variant={viewMode === "masonry" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => onViewModeChange("masonry" as ViewMode)}
+                onClick={() => setViewMode("masonry")}
                 className="n8n-3d-button h-8 w-8 p-0 n8n-interactive-3d"
                 title="Masonry view"
               >
                 <LayoutGrid className="w-4 h-4" />
-              </Button>
+              </Button> */}
               <Button
                 variant={viewMode === "grid" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => onViewModeChange("grid")}
+                onClick={() => setViewMode("grid")}
                 className="n8n-3d-button h-8 w-8 p-0 n8n-interactive-3d"
                 title="Grid view (⌘⇧V)"
               >
@@ -228,7 +308,7 @@ export function MainContent({
               <Button
                 variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
-                onClick={() => onViewModeChange("list")}
+                onClick={() => setViewMode("list")}
                 className="n8n-3d-button h-8 w-8 p-0 n8n-interactive-3d"
                 title="List view (⌘⇧V)"
               >
@@ -297,7 +377,7 @@ export function MainContent({
         </div>
       </div>
 
-      <div className="flex-1 p-6 bg-gradient-to-br from-background via-background to-muted/20 n8n-3d-bg n8n-parallax">
+      <div className="flex-1 p-6 bg-gradient-to-br from-background via-background to-muted/20 n8n-3d-bg n8n-parallax overflow-y-auto">
         
         {filteredBookmarks.length === 0 ? (
           <EmptyState
@@ -306,21 +386,35 @@ export function MainContent({
             onClearFilters={hasActiveFilters ? clearFilters : undefined}
           />
         ) : viewMode === "masonry" ? (
-          <MasonryGrid bookmarks={filteredBookmarks} onEdit={onEditBookmark} onDelete={onDeleteBookmark} onLikeToggle={onLikeToggle} onFavoriteToggle={onFavoriteToggle} />
+          <MasonryGrid bookmarks={filteredBookmarks} onEdit={onEditBookmark} onDelete={onDeleteBookmark} onLikeToggle={onLikeToggle} onFavoriteToggle={onFavoriteToggle} onPlayMedia={onPlayMedia} />
         ) : viewMode === "grid" ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 n8n-3d-container">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 n8n-3d-container overflow-y-auto">
             {filteredBookmarks.map((bookmark, index) => (
               <div 
                 key={bookmark.id} 
                 className="n8n-float" 
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
-                <BookmarkCard bookmark={bookmark} onEdit={onEditBookmark} onDelete={onDeleteBookmark} onLikeToggle={onLikeToggle} onFavoriteToggle={onFavoriteToggle} />
+                <BookmarkCard bookmark={bookmark} onEdit={onEditBookmark} onDelete={onDeleteBookmark} onLikeToggle={onLikeToggle} onFavoriteToggle={onFavoriteToggle} onPlayMedia={onPlayMedia} />
               </div>
             ))}
           </div>
         ) : (
-          <BookmarkList bookmarks={filteredBookmarks} onEdit={onEditBookmark} onDelete={onDeleteBookmark} onLikeToggle={onLikeToggle} onFavoriteToggle={onFavoriteToggle} />
+          <BookmarkList 
+            bookmarks={filteredBookmarks} 
+            onEdit={onEditBookmark} 
+            onDelete={onDeleteBookmark} 
+            onLikeToggle={onLikeToggle} 
+            onFavoriteToggle={onFavoriteToggle} 
+            onPlayMedia={onPlayMedia} 
+            isMusicCollection={selectedCollectionName === "Music"} // Assuming "Music" is the name for music collections
+            isPlaying={isPlaying}
+            onNextMedia={onNextMedia}
+            onPreviousMedia={onPreviousMedia}
+            onPlayAllMusic={onPlayAllMusic}
+            selectedCollectionId={selectedCollection} // Pass the ID instead of name
+            collections={flatCollections} // Pass flatCollections for media type check
+          />
         )}
       </div>
     </div>

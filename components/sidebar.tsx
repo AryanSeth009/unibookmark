@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -42,12 +42,15 @@ import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Settings, LogOut } from "lucide-react";
+import randomProfile from 'random-profile-generator';
 
 interface SidebarProps {
   collections: Collection[];
   selectedCollection: string;
   onSelectCollection: (collectionId: string) => void;
   onAddCollection: (name: string, parentId?: string) => Promise<void>;
+  onSaveForLater: () => void;
+  onShowSavedForLater: () => void;
 }
 
 const collectionIcons = {
@@ -91,12 +94,18 @@ export function Sidebar({
   selectedCollection,
   onSelectCollection,
   onAddCollection,
+  onSaveForLater,
+  onShowSavedForLater,
 }: SidebarProps) {
   const [isAddingCollection, setIsAddingCollection] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState("");
   const [expandedCollections, setExpandedCollections] = useState<Set<string>>(
     new Set(["entertainment", "ecommerce", "socials", "chats"])
   );
+  const [randomUserData, setRandomUserData] = useState({
+    fullName: "",
+    avatar: "",
+  });
 
   const handleAddCollection = (parentId?: string) => {
     if (newCollectionName.trim()) {
@@ -136,6 +145,16 @@ export function Sidebar({
   const router = useRouter();
   const { toast } = useToast();
 
+  useEffect(() => {
+    if (!profile?.full_name) {
+      const newRandomProfile = randomProfile.profile();
+      setRandomUserData({
+        fullName: newRandomProfile.fullName,
+        avatar: newRandomProfile.avatar,
+      });
+    }
+  }, [profile]);
+
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
@@ -156,36 +175,40 @@ export function Sidebar({
     }
   };
 
+  const displayFullName = profile?.full_name || randomUserData.fullName || "User";
+  const displayAvatarUrl = profile?.avatar_url || randomUserData.avatar || "/placeholder.svg";
+
   const initials = profile?.full_name
     ? profile.full_name
         .split(" ")
         .map((n: string) => n[0])
         .join("")
         .toUpperCase()
-    : profile?.email?.[0]?.toUpperCase() || "U";
+    : (randomUserData.fullName ? randomUserData.fullName.split(" ").map((n: string) => n[0]).join("").toUpperCase() : "U");
 
   return (
-    <div className="w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+    <div className=" w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="p-4 border-b border-sidebar-border/50">
         <div className="flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
+          {/* <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
             <Bookmark className="w-3 h-3 text-primary-foreground" />
-          </div>
+          </div> */}
           <h1 onClick={() => (window.location.href = "/")}
             className="cursor-pointer font-semibold text-sidebar-foreground"
           >
             Unibookmark
           </h1>
-          {/* <ThemeToggle className="pl-2 p-0  hover:bg-sidebar-accent"  placeholder="Theme"/> */}
+          {/* <img src="/bg_logo.png" alt="Unibookmark" className="p-2 w-full h-24" /> */}
+          <ThemeToggle />
         </div>
       </div>
 
-      <ScrollArea className="flex-1">
+      <ScrollArea className="flex-1  ">
         <div className="p-4 space-y-6">
           {/* Collections Section */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-medium text-muted-foreground">
+              <h2 className="text-sm font-medium text-foreground">
                 Collections
               </h2>
               <Button
@@ -194,7 +217,7 @@ export function Sidebar({
                 onClick={() => setIsAddingCollection(true)}
                 className="h-6 w-6 p-0 hover:bg-sidebar-accent"
               >
-                <Plus className="w-3 h-3 text-muted-foreground" />
+                <Plus className="w-3 h-3 text-foreground" />
               </Button>
             </div>
 
@@ -249,10 +272,10 @@ export function Sidebar({
                           )}
                           {typeof collection.count === "number" &&
                             collection.count > 0 && (
-                              <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                {collection.count}
-                              </span>
-                            )}
+                                <span className="text-xs text-foreground bg-muted px-1.5 py-0.5 rounded">
+                                  {collection.count}
+                                </span>
+                              )}
                         </button>
 
                         <DropdownMenu>
@@ -330,47 +353,25 @@ export function Sidebar({
                       </div>
 
                       {subcollections.length > 0 && isExpanded && (
-                        <div className="ml-6 space-y-1 mt-1">
+                        <div className="relative ml-4 space-y-1 mt-1 border-l-2 border-dashed border-border/50">
                           {subcollections.map((sub) => (
                             <button
                               key={sub.id}
                               onClick={() => onSelectCollection(sub.id)}
                               className={cn(
-                                "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200 text-left",
+                                "w-full flex items-center gap-3 pl-5 pr-3 py-2 rounded-lg text-sm transition-all duration-200 text-left relative",
+                                "before:absolute before:left-0 before:top-1/2 before:h-px before:w-4 before:bg-border/50", // Horizontal line
                                 selectedCollection === sub.id
                                   ? "bg-primary/10 text-primary-foreground border border-primary/20"
                                   : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                               )}
                             >
-                              <span className="w-4 h-4 flex items-center justify-center">
-                                <svg
-                                  width="6"
-                                  height="6"
-                                  viewBox="0 0 6 6"
-                                  fill="none"
-                                  xmlns="http://www.w3.org/2000/svg"
-                                >
-                                  <path
-                                    d="M1 3H5"
-                                    stroke="currentColor"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                  <path
-                                    d="M3 5V1"
-                                    stroke="currentColor"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  />
-                                </svg>
-                              </span>
                               <span className="flex-1">{sub.name}</span>
-                              {typeof sub.count === "number" &&
-                                sub.count > 0 && (
-                                  <span className="text-xs text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                    {sub.count}
-                                  </span>
-                                )}
+                              {typeof sub.count === "number" && sub.count > 0 && (
+                                <span className="text-xs text-foreground bg-muted px-1.5 py-0.5 rounded">
+                                  {sub.count}
+                                </span>
+                              )}
                             </button>
                           ))}
                         </div>
@@ -404,15 +405,17 @@ export function Sidebar({
           </div>
 
           <div>
-            <h2 className="text-sm font-medium text-muted-foreground mb-3">
+            <h2 className="text-sm font-medium text-foreground mb-3">
               Settings
             </h2>
             <div className="space-y-1">
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-left transition-all duration-200">
+              {/* <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-left transition-all duration-200">
                 <Tag className="w-4 h-4 flex-shrink-0" />
                 <span>Tags</span>
-              </button>
-              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-left transition-all duration-200">
+              </button> */}
+              <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground text-left transition-all duration-200"
+                onClick={onShowSavedForLater}
+              >
                 <Link className="w-4 h-4 flex-shrink-0" />
                 <span>Save for later</span>
               </button>
@@ -430,54 +433,53 @@ export function Sidebar({
       <div className="p-2 border-t flex items-center justify-between border-sidebar-border/50">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full flex items-center gap-3 px-3 py-2 h-auto hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            <div
+              className="w-full flex items-center gap-3 px-3 py-2 h-auto hover:bg-sidebar-accent hover:text-sidebar-accent-foreground cursor-pointer"
             >
               <Avatar className="w-8 h-8">
-                <AvatarImage src={profile?.avatar_url || "/placeholder.svg"} />
+                <AvatarImage src={displayAvatarUrl} />
                 <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                   {initials}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1 text-left flex items-center justify-between">
+              <div className="flex-1 gap-2 text-left flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-sidebar-foreground">
-                    {profile?.full_name || "User"}
+                  <p className="text-xs font-medium text-sidebar-foreground truncate">
+                    {displayFullName}
                   </p>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <p className="text-xs text-foreground truncate">
                     Free
                   </p>
                 </div>
-                <Button variant="secondary" size="sm" className="h-7 text-xs">
+                {/* <Button variant="secondary" size="sm" className="h-7 rounded-2xl text-xs">
                   Upgrade
-                </Button>
+                </Button> */}
               </div>
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            </Button>
+              <ChevronDown className="w-4 h-4 text-foreground" />
+            </div>
           </DropdownMenuTrigger>
           <DropdownMenuContent side="top" align="end" sideOffset={10} className="w-56 z-50 bg-white dark:bg-popover text-gray-900 dark:text-popover-foreground border-gray-200 dark:border-border">
             <DropdownMenuLabel className="font-normal">
               <div className="flex items-center gap-3">
                 <Avatar className="w-8 h-8">
-                  <AvatarImage src={profile?.avatar_url || "/placeholder.svg"} />
+                  <AvatarImage src={displayAvatarUrl} />
                   <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                     {initials}
                   </AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="text-sm font-medium">{profile?.email}</p>
+                  <p className="text-xs font-medium truncate">{displayFullName}</p>
                 </div>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator className="bg-gray-200 dark:bg-border"/>
-            <DropdownMenuItem className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-accent focus:bg-gray-100 dark:focus:bg-accent">
-              <User className="w-4 h-4" />
+            <DropdownMenuItem onClick={() => router.push("/pricing")} className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-accent focus:bg-gray-100 dark:focus:bg-accent">
+              <User  className="w-4 h-4" />
               Upgrade plan
             </DropdownMenuItem>
-            <DropdownMenuItem className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-accent focus:bg-gray-100 dark:focus:bg-accent">
-              <Settings className="w-4 h-4" />
-              Personalization
+            <DropdownMenuItem className="flex items-center justify-start gap-2    hover:bg-gray-100 dark:hover:bg-accent focus:bg-gray-100 dark:focus:bg-accent">
+              <ThemeToggle  />
+            Theme toggle
             </DropdownMenuItem>
             <DropdownMenuItem className="flex items-center gap-2 hover:bg-gray-100 dark:hover:bg-accent focus:bg-gray-100 dark:focus:bg-accent">
               <Settings className="w-4 h-4" />
@@ -498,7 +500,6 @@ export function Sidebar({
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        <ThemeToggle />
       </div>
     </div>
   );

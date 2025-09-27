@@ -11,6 +11,7 @@ export interface Collection {
   description?: string
   parentId?: string
   children?: Collection[]
+  mediaType?: "audio" | "video" | "other"
 }
 
 const API_URL = "/api/collections"

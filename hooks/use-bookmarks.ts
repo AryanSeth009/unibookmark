@@ -24,14 +24,16 @@ function transformBookmark(raw: any): Bookmark {
     isFavorite: raw.is_favorite ?? false,
     likesCount: raw.likes_count ?? 0,
     isLiked: raw.is_liked ?? false,
+    mediaType: raw.media_type ?? 'other',
   }
 }
 
-export function useBookmarks(collectionId?: string, search?: string, tags?: string[], currentUserId?: string) {
+export function useBookmarks(collectionId?: string, search?: string, tags?: string[], mediaType?: "audio" | "video" | "other", currentUserId?: string) {
   const params = new URLSearchParams()
   if (collectionId) params.set("collection", collectionId)
   if (search) params.set("search", search)
   if (tags && tags.length > 0) params.set("tags", tags.join(","))
+  if (mediaType) params.set("mediaType", mediaType)
 
   const { data, error, mutate } = useSWR(`/api/bookmarks?${params.toString()}`, fetcher)
 
@@ -91,13 +93,35 @@ export async function updateBookmark(
     thumbnail_url?: string
   },
 ) {
+  // Fetch the existing bookmark to ensure title and url are always sent
+  const existingBookmarkResponse = await fetch(`/api/bookmarks/${id}`, {
+    method: "GET",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+  });
+
+  if (!existingBookmarkResponse.ok) {
+    throw new Error("Failed to fetch existing bookmark for update");
+  }
+  const existingBookmark = await existingBookmarkResponse.json();
+
+  const payload = {
+    title: bookmarkData.title || existingBookmark.title,
+    url: bookmarkData.url || existingBookmark.url,
+    description: bookmarkData.description ?? existingBookmark.description,
+    collection_id: bookmarkData.collection_id ?? existingBookmark.collection_id,
+    tags: bookmarkData.tags ?? existingBookmark.tags,
+    is_favorite: bookmarkData.is_favorite ?? existingBookmark.is_favorite,
+    thumbnail_url: bookmarkData.thumbnail_url ?? existingBookmark.thumbnail_url,
+  };
+
   const response = await fetch(`/api/bookmarks/${id}`, {
     method: "PUT",
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(bookmarkData),
+    body: JSON.stringify(payload),
   })
 
   if (!response.ok) {

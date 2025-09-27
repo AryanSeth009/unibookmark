@@ -8,21 +8,11 @@ export interface Bookmark {
   createdAt: Date
   favicon?: string
   thumbnailUrl?: string
+  language?: string
+  mediaType?: "audio" | "video" | "other"
   isFavorite?: boolean
   likesCount?: number
   isLiked?: boolean
-}
-
-export interface Collection {
-  id: string
-  name: string
-  count: number
-  isDefault: boolean
-  icon?: string
-  color?: string
-  description?: string
-  parentId?: string
-  children?: Collection[]
 }
 
 export type ViewMode = "grid" | "list" | "masonry"

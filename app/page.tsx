@@ -10,13 +10,15 @@ import { KeyboardShortcuts } from "@/components/keyboard-shortcuts"
 import { Toaster } from "@/components/ui/toaster"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
-import { Plus, Zap } from "lucide-react"
+import { Plus, Zap, SkipBack, SkipForward, Play, Pause } from "lucide-react"
 import { useBookmarks, createBookmark, updateBookmark, deleteBookmark, likeBookmark, unlikeBookmark } from "@/hooks/use-bookmarks"
 import type { Bookmark, DateFilter } from "@/types/bookmark"
 import { useCollections } from "@/hooks/use-collections"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { User } from "@supabase/supabase-js"
+import YouTubePlayer from "@/components/youtube-player"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 
 export default function HomePage() {
   const [selectedCollection, setSelectedCollection] = useState<string>("all")
@@ -30,8 +32,18 @@ export default function HomePage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>("all")
   const [viewMode, setViewMode] = useState<"grid" | "list" | "masonry">("masonry")
   const [user, setUser] = useState<User | null>(null)
+  const [showSavedForLater, setShowSavedForLater] = useState(false);
+  const [currentPlayingBookmark, setCurrentPlayingBookmark] = useState<Bookmark | null>(null);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMediaModalOpen, setIsMediaModalOpen] = useState(false); // Generic modal for all media
+  const [isYoutubeApiReady, setIsYoutubeApiReady] = useState(false); 
+  const [playlist, setPlaylist] = useState<Bookmark[]>([]);
+  const [currentPlayingIndex, setCurrentPlayingIndex] = useState<number>(0);
 
   const searchInputRef = useRef<HTMLInputElement>(null)
+  const audioRef = useRef<HTMLAudioElement>(null); // New ref for audio element
+  const youtubePlayerRef = useRef<YT.Player | null>(null); // Ref for YouTube player instance
+
   const { toast } = useToast()
   const router = useRouter()
 
@@ -46,7 +58,17 @@ export default function HomePage() {
     bookmarks,
     isLoading: bookmarksLoading,
     mutate: mutateBookmarks,
-  } = useBookmarks(selectedCollection, debouncedSearch, selectedTags, user?.id)
+  } = useBookmarks(selectedCollection, debouncedSearch, 
+    showSavedForLater ? ["save"] : selectedTags, 
+    // Only fetch audio bookmarks if a music collection is selected
+    selectedCollection === "music" ? "audio" : undefined,
+    user?.id
+  )
+
+  console.log("showSavedForLater:", showSavedForLater);
+  console.log("selectedTags for useBookmarks:", showSavedForLater ? ["save"] : selectedTags);
+  console.log("Bookmarks in HomePage:", bookmarks);
+
   const { collections, isLoading: collectionsLoading, mutate: mutateCollections, createCollection, flatCollections } = useCollections()
 
   useEffect(() => {
@@ -64,6 +86,35 @@ export default function HomePage() {
 
     checkAuth()
   }, [router])
+
+  // Effect to control audio playback
+  useEffect(() => {
+    if (audioRef.current && currentPlayingBookmark?.mediaType === "audio") {
+      if (isPlaying) {
+        audioRef.current.play();
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isPlaying, currentPlayingBookmark]);
+
+  // Effect to control YouTube playback
+  useEffect(() => {
+    if (youtubePlayerRef.current && currentPlayingBookmark?.mediaType === "video") {
+      if (isPlaying) {
+        youtubePlayerRef.current.playVideo();
+      } else {
+        youtubePlayerRef.current.pauseVideo();
+      }
+    }
+  }, [isPlaying, currentPlayingBookmark]);
+
+  useEffect(() => {
+    // This function is called by the YouTube IFrame Player API when it's loaded
+    window.onYouTubeIframeAPIReady = () => {
+      setIsYoutubeApiReady(true);
+    };
+  }, []);
 
   const handleAddBookmark = async (bookmarkData: {
     title: string
@@ -217,6 +268,44 @@ export default function HomePage() {
     }
   }
 
+  const handleSaveForLater = async () => {
+    const url = window.prompt("Enter the URL to save for later:");
+    if (!url || url.trim() === "") {
+      toast({
+        title: "Cancelled",
+        description: "Bookmark save cancelled.",
+      });
+      return;
+    }
+
+    try {
+      await createBookmark({
+        title: url, // Use URL as title by default
+        url: url,
+        tags: ["save"], // Add the "save" tag
+      });
+      mutateBookmarks();
+      mutateCollections();
+      toast({
+        title: "Bookmark Saved",
+        description: `URL saved for later: "${url}"`, 
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save bookmark for later. Please try again.",
+        variant: "destructive",
+      });
+      console.error("Save for later error:", error);
+    }
+  };
+
+  const handleShowSavedForLater = () => {
+    setShowSavedForLater(true);
+    setSelectedCollection("all"); // Reset collection filter when showing saved for later
+    setSelectedTags(["save"]); // Explicitly set the "save" tag
+  };
+
   const handleFocusSearch = () => {
     searchInputRef.current?.focus()
   }
@@ -233,6 +322,88 @@ export default function HomePage() {
       .slice(0, 10)
   }
 
+  const handlePlayMedia = (bookmark: Bookmark) => {
+    if (!bookmark.mediaType) {
+      console.warn("Bookmark has no mediaType, cannot play.", bookmark);
+      return;
+    }
+
+    // If a music collection is selected, we manage a playlist
+    if (selectedCollection === "music") {
+      // Filter only audio bookmarks for the playlist
+      const audioBookmarks = bookmarks.filter(b => b.mediaType === "audio");
+      const initialIndex = audioBookmarks.findIndex(b => b.id === bookmark.id);
+
+      setPlaylist(audioBookmarks);
+      setCurrentPlayingIndex(initialIndex !== -1 ? initialIndex : 0);
+      setCurrentPlayingBookmark(audioBookmarks[initialIndex !== -1 ? initialIndex : 0]);
+    } else {
+      // For other collections, just play the single media item
+      setPlaylist([]);
+      setCurrentPlayingIndex(0);
+      setCurrentPlayingBookmark(bookmark);
+    }
+    setIsMediaModalOpen(true);
+    setIsPlaying(true);
+  };
+
+  const handlePlayAllMusic = (bookmarksToPlay: Bookmark[]) => {
+    if (bookmarksToPlay.length > 0) {
+      setPlaylist(bookmarksToPlay);
+      setCurrentPlayingIndex(0);
+      setCurrentPlayingBookmark(bookmarksToPlay[0]);
+      setIsMediaModalOpen(true);
+      setIsPlaying(true);
+    } else {
+      toast({
+        title: "No playable media",
+        description: "No audio or video bookmarks found in this collection.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleNextMedia = () => {
+    if (playlist.length > 0 && currentPlayingIndex < playlist.length - 1) {
+      const nextIndex = currentPlayingIndex + 1;
+      setCurrentPlayingIndex(nextIndex);
+      setCurrentPlayingBookmark(playlist[nextIndex]);
+    } else if (playlist.length > 0) {
+      // Loop back to the beginning if at the end of the playlist
+      setCurrentPlayingIndex(0);
+      setCurrentPlayingBookmark(playlist[0]);
+    }
+    setIsPlaying(true);
+  };
+
+  const handlePreviousMedia = () => {
+    if (playlist.length > 0 && currentPlayingIndex > 0) {
+      const prevIndex = currentPlayingIndex - 1;
+      setCurrentPlayingIndex(prevIndex);
+      setCurrentPlayingBookmark(playlist[prevIndex]);
+    } else if (playlist.length > 0) {
+      // Loop to the end if at the beginning of the playlist
+      setCurrentPlayingIndex(playlist.length - 1);
+      setCurrentPlayingBookmark(playlist[playlist.length - 1]);
+    }
+    setIsPlaying(true);
+  };
+
+  const handleMediaEnded = () => {
+    if (playlist.length > 0 && currentPlayingIndex < playlist.length - 1) {
+      const nextIndex = currentPlayingIndex + 1;
+      setCurrentPlayingIndex(nextIndex);
+      setCurrentPlayingBookmark(playlist[nextIndex]);
+    } else {
+      // End of playlist, stop playback
+      setIsMediaModalOpen(false);
+      setCurrentPlayingBookmark(null);
+      setPlaylist([]);
+      setCurrentPlayingIndex(0);
+      setIsPlaying(false);
+    }
+  };
+
   if (bookmarksLoading || collectionsLoading) {
     return (
       <div className="flex h-screen bg-background text-foreground items-center justify-center">
@@ -246,6 +417,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-n8n-dark text-white font-inter relative flex"> {/* Applied n8n-dark background and Inter font, and kept flex for layout */}
+      {/* console.log("app/page.tsx: rendering HomePage, playingVideoId:", playingVideoId, "isYoutubeModalOpen:", isYoutubeModalOpen, "isYoutubeApiReady:", isYoutubeApiReady) */}
       {/* Elegant Gradient Background - n8n style */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-1/2 -right-1/2 w-[200%] h-[200%] 
@@ -262,7 +434,7 @@ export default function HomePage() {
           </div>
       </div>
 
-      <div className="relative flex flex-1">
+      <div className="relative flex flex-1 h-screen overflow-hidden">
         <KeyboardShortcuts
           onAddBookmark={() => setIsModalOpen(true)}
           onSearch={handleFocusSearch}
@@ -274,6 +446,8 @@ export default function HomePage() {
           selectedCollection={selectedCollection}
           onSelectCollection={setSelectedCollection}
           onAddCollection={handleAddCollection}
+          onSaveForLater={handleSaveForLater}
+          onShowSavedForLater={handleShowSavedForLater}
         />
 
         <MainContent
@@ -283,17 +457,21 @@ export default function HomePage() {
           searchQuery={searchQuery}
           selectedTags={selectedTags}
           dateFilter={dateFilter}
-          viewMode={viewMode}
           onSearchChange={setSearchQuery}
           onTagsChange={setSelectedTags}
           onDateFilterChange={setDateFilter}
-          onViewModeChange={setViewMode}
           onAddBookmark={() => setIsModalOpen(true)}
           onEditBookmark={handleEditBookmark}
           onDeleteBookmark={handleDeleteBookmark}
           onLikeToggle={handleLikeToggle}
           onFavoriteToggle={handleFavoriteToggle}
           searchInputRef={searchInputRef}
+          onPlayMedia={handlePlayMedia} // Changed prop name
+          flatCollections={flatCollections}
+          isPlaying={isPlaying}
+          onNextMedia={handleNextMedia}
+          onPreviousMedia={handlePreviousMedia}
+          onPlayAllMusic={handlePlayAllMusic} // Pass the new handler
         />
 
         <div className="fixed bottom-6 right-6 flex flex-col gap-3 z-50">
@@ -355,6 +533,51 @@ export default function HomePage() {
         />
 
         <Toaster />
+
+        {/* YouTube Player Modal */}
+        <Dialog open={isMediaModalOpen} onOpenChange={setIsMediaModalOpen}>
+          <DialogContent className="sm:max-w-[700px]">
+            <DialogHeader>
+              <DialogTitle>Playing Media</DialogTitle>
+              <DialogDescription>
+                This media is playing in a separate window.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex flex-col items-center justify-center p-4">
+              {currentPlayingBookmark && (
+                <h3 className="text-lg font-semibold mb-2 text-foreground">{currentPlayingBookmark.title}</h3>
+              )}
+              {currentPlayingBookmark && isYoutubeApiReady && currentPlayingBookmark.mediaType === "video" && (
+                <YouTubePlayer
+                  bookmark={currentPlayingBookmark}
+                  isApiReady={isYoutubeApiReady}
+                  onEnded={handleMediaEnded}
+                  playerRef={youtubePlayerRef}
+                />
+              )}
+              {currentPlayingBookmark && currentPlayingBookmark.mediaType === "audio" && (
+                <audio ref={audioRef} controls autoPlay onEnded={handleMediaEnded} className="w-full">
+                  <source src={currentPlayingBookmark.url} type="audio/mpeg" />
+                  Your browser does not support the audio element.
+                </audio>
+              )}
+
+              {currentPlayingBookmark && (playlist.length > 1 || currentPlayingBookmark.mediaType === "audio") && (
+                <div className="flex items-center gap-4 mt-4">
+                  <Button variant="ghost" size="icon" onClick={handlePreviousMedia} disabled={playlist.length === 0}>
+                    <SkipBack className="w-6 h-6" />
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={() => setIsPlaying(!isPlaying)}>
+                    {isPlaying ? <Pause className="w-8 h-8" /> : <Play className="w-8 h-8" />}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={handleNextMedia} disabled={playlist.length === 0}>
+                    <SkipForward className="w-6 h-6" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   )

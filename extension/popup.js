@@ -7,6 +7,7 @@ class SmartBookmarkPopup {
     this.recentBookmarks = []
     this.isAuthenticated = false
     this.searchTimeout = null
+    this.saveForLaterChecked = false; // New property for "Save for later" checkbox state
 
     this.init()
   }
@@ -68,6 +69,14 @@ class SmartBookmarkPopup {
     // Save form events
     document.getElementById("cancelSaveBtn").addEventListener("click", () => this.hideSaveForm())
     document.getElementById("confirmSaveBtn").addEventListener("click", () => this.saveBookmark())
+
+    // Event listener for the new "Save for later" checkbox (assuming it exists in the HTML)
+    const saveForLaterCheckbox = document.getElementById("saveForLaterCheckbox");
+    if (saveForLaterCheckbox) {
+      saveForLaterCheckbox.addEventListener("change", (e) => {
+        this.saveForLaterChecked = e.target && typeof e.target.checked === "boolean" ? e.target.checked : false;
+      });
+    }
 
     // Search events
     document.getElementById("searchInput").addEventListener("input", (e) => this.handleSearch(e.target.value))
@@ -219,18 +228,22 @@ class SmartBookmarkPopup {
     const description = document.getElementById("descriptionInput").value.trim()
     const collectionId = document.getElementById("collectionSelect").value
     const tagsInput = document.getElementById("tagsInput").value.trim()
-
-    if (!title || !url) {
-      this.showError("Title and URL are required")
-      return
-    }
-
-    const tags = tagsInput
+   
+    let tags = tagsInput
       ? tagsInput
           .split(",")
           .map((tag) => tag.trim())
           .filter((tag) => tag)
       : []
+ 
+    if (this.saveForLaterChecked) {
+      tags.push("save");
+    }
+
+    if (!title || !url) {
+      this.showError("Title and URL are required")
+      return
+    }
 
     try {
       const bookmarkData = {

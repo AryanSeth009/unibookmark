@@ -35,8 +35,8 @@
   "commands": {
     "save-bookmark": {
       "suggested_key": {
-        "default": "Ctrl+Shift+S",
-        "mac": "Command+Shift+S"
+        "default": "Ctrl+B",
+        "mac": "Command+B"
       },
       "description": "Save current page as bookmark"
     },

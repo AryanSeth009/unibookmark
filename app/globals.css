@@ -6,11 +6,11 @@
 
 :root {
   /* Added light theme variables for proper theme switching */
-  --background: #ffffff; /* White background for light theme */
+  --background: #f8f8f8; /* Off-white background for light theme */
   --foreground: #1a1a1a; /* Dark text for light theme */
-  --card: #ffffff; /* White cards */
+  --card: #fdfdfd; /* Slightly off-white cards for better contrast */
   --card-foreground: #1a1a1a; /* Dark card text */
-  --popover: #ffffff; /* White popover */
+  --popover: #fdfdfd; /* Slightly off-white popover */
   --popover-foreground: #1a1a1a; /* Dark popover text */
   --primary: #6c47ff; /* n8n purple accent */
   --primary-foreground: #ffffff; /* White on purple */
@@ -22,7 +22,7 @@
   --accent-foreground: #ffffff; /* White on pink */
   --destructive: #ef4444; /* Red for destructive actions */
   --destructive-foreground: #ffffff; /* White on red */
-  --border: #e5e7eb; /* Light border */
+  --border: #d4d4d4; /* Darker border for better visibility */
   --input: #ffffff; /* White input background */
   --ring: #6c47ff; /* Purple focus ring */
   --chart-1: #6c47ff; /* Purple chart color */

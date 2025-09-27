@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const order = searchParams.get("order") || "desc"
     const tags = searchParams.get("tags")?.split(",").filter(Boolean) || []
     const search = searchParams.get("search")
+    const mediaType = searchParams.get("mediaType")
 
     let query = supabase
       .from("bookmarks")
@@ -29,21 +30,64 @@ export async function GET(request: NextRequest) {
           id,
           name,
           color,
-          icon
+          icon,
+          parent_id
         ),
         is_favorite
       `)
       .eq("user_id", user.id)
       
 
-    // Filter by collection
+    // Fetch all collections to build hierarchy for subcollection filtering
+    const { data: allCollections, error: collectionsError } = await supabase
+      .from("collections")
+      .select("id, parent_id");
+
+    if (collectionsError) {
+      console.error("Error fetching collections:", collectionsError);
+      return NextResponse.json({ error: "Failed to fetch collections" }, { status: 500 });
+    }
+
+    const collectionMap = new Map<string, { id: string; parent_id: string | null; children: string[] }>();
+    allCollections.forEach(col => {
+      collectionMap.set(col.id, { ...col, children: [] });
+    });
+
+    allCollections.forEach(col => {
+      if (col.parent_id && collectionMap.has(col.parent_id)) {
+        collectionMap.get(col.parent_id)!.children.push(col.id);
+      }
+    });
+
+    const getDescendantCollectionIds = (id: string): string[] => {
+      const descendants: string[] = [];
+      const queue: string[] = [id];
+
+      while (queue.length > 0) {
+        const currentId = queue.shift()!;
+        descendants.push(currentId);
+        const collection = collectionMap.get(currentId);
+        if (collection && collection.children.length > 0) {
+          queue.push(...collection.children);
+        }
+      }
+      return descendants;
+    };
+
+    // Filter by collection (including subcollections)
     if (collectionId && collectionId !== "all") {
-      query = query.eq("collection_id", collectionId)
+      const relevantCollectionIds = getDescendantCollectionIds(collectionId);
+      query = query.in("collection_id", relevantCollectionIds);
     }
 
     // Filter by tags
     if (tags.length > 0) {
       query = query.overlaps("tags", tags)
+    }
+
+    // Filter by media type
+    if (mediaType) {
+      query = query.eq("media_type", mediaType)
     }
 
     // Search functionality
@@ -70,16 +114,17 @@ export async function GET(request: NextRequest) {
 
     const bookmarksWithEngagement = await Promise.all(
       bookmarks.map(async (bookmark) => {
-        const { data: engagement, error: engagementError } = await supabase.rpc(
-          'get_bookmark_engagement', 
-          { bookmark_id_param: bookmark.id, user_id_param: user.id }
-        ).single()
+        const { data: engagementData, error: engagementError } = await supabase.rpc(
+            'get_bookmark_engagement', 
+            { bookmark_id_param: bookmark.id, user_id_param: user.id }
+          ).single();
 
-        if (engagementError) {
-          console.warn(`Failed to fetch engagement for bookmark ${bookmark.id}:`, engagementError)
-          return { ...bookmark, likes_count: 0, is_liked: false }
+        if (engagementError || !engagementData) {
+          console.warn(`Failed to fetch engagement for bookmark ${bookmark.id}:`, engagementError || "No engagement data");
+          return { ...bookmark, likes_count: 0, is_liked: false };
         }
-        return { ...bookmark, likes_count: engagement.likes_count, is_liked: engagement.is_liked }
+        const engagement = engagementData as { likes_count: number; is_liked: boolean; };
+        return { ...bookmark, likes_count: engagement.likes_count, is_liked: engagement.is_liked };
       })
     )
 
@@ -101,8 +146,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const inferMediaTypeFromUrl = (url: string): "audio" | "video" | "other" => {
+      // Robust Regex for YouTube URLs (including music.youtube.com) to capture video ID
+      const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be|music\.youtube\.com)\/(?:(?:watch\?v=|embed\/|v\/)|)([-\w]{11})(?:\S+)?/i;
+      // Regex for common audio file extensions
+      const audioRegex = /\.(mp3|wav|ogg|aac|flac|m4a)$/i
+
+      let detectedMediaType: "audio" | "video" | "other" = "other";
+
+      if (youtubeRegex.test(url) || url.includes("music.youtube.com")) {
+        detectedMediaType = "video"
+      } else if (audioRegex.test(url)) {
+        detectedMediaType = "audio"
+      }
+      console.log(`Inferring mediaType for URL: ${url} -> ${detectedMediaType} (youtubeRegex match: ${youtubeRegex.test(url)}, includes music.youtube.com: ${url.includes("music.youtube.com")})`);
+      return detectedMediaType;
+    }
+
     const body = await request.json()
     const { title, url, description, collection_id, tags, favicon_url, thumbnail_url } = body
+
+    const mediaType = inferMediaTypeFromUrl(url)
 
     if (!title || !url) {
       return NextResponse.json({ error: "Title and URL are required" }, { status: 400 })
@@ -143,6 +207,7 @@ export async function POST(request: NextRequest) {
       tags: tags || [],
       favicon_url: favicon_url || null,
       thumbnail_url: thumbnail_url || null,
+      media_type: mediaType,
       user_id: user.id,
     }
 

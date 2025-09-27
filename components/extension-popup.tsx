@@ -76,7 +76,7 @@ export function ExtensionPopup({ collections, recentBookmarks, onSaveBookmark, o
           <div className="p-4 space-y-3">
             {/* Search */}
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-foreground" />
               <Input
                 placeholder="Search recent bookmarks..."
                 value={searchQuery}
@@ -88,7 +88,7 @@ export function ExtensionPopup({ collections, recentBookmarks, onSaveBookmark, o
             {/* Recent Bookmarks */}
             <div className="space-y-2">
               {filteredBookmarks.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground">
+                <div className="text-center py-6 text-foreground">
                   <Grid className="w-8 h-8 mx-auto mb-2 opacity-50" />
                   <p className="text-xs">No recent bookmarks</p>
                 </div>
@@ -112,7 +112,7 @@ export function ExtensionPopup({ collections, recentBookmarks, onSaveBookmark, o
                       <p className="text-xs font-medium text-foreground truncate group-hover:text-primary">
                         {bookmark.title}
                       </p>
-                      <p className="text-xs text-muted-foreground truncate">{new URL(bookmark.url).hostname}</p>
+                      <p className="text-xs text-foreground truncate">{new URL(bookmark.url).hostname}</p>
                     </div>
                   </div>
                 ))

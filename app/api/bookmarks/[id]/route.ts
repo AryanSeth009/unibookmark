@@ -56,8 +56,27 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const inferMediaTypeFromUrl = (url: string): "audio" | "video" | "other" => {
+      // Simplified Regex for YouTube URLs (including music.youtube.com)
+      const youtubeRegex = /(youtube\.com|youtu\.be|music\.youtube\.com)/i;
+      // Regex for common audio file extensions
+      const audioRegex = /\.(mp3|wav|ogg|aac|flac|m4a)$/i
+
+      let detectedMediaType: "audio" | "video" | "other" = "other";
+
+      if (youtubeRegex.test(url)) {
+        detectedMediaType = "video"
+      } else if (audioRegex.test(url)) {
+        detectedMediaType = "audio"
+      }
+      console.log(`Inferring mediaType for URL: ${url} -> ${detectedMediaType}`);
+      return detectedMediaType;
+    }
+
     const body = await request.json()
     const { title, url, description, collection_id, tags, is_favorite, thumbnail_url } = body
+
+    const mediaType = inferMediaTypeFromUrl(url)
 
     if (!title || !url) {
       return NextResponse.json({ error: "Title and URL are required" }, { status: 400 })
@@ -71,6 +90,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
       tags: tags || [],
       is_favorite: is_favorite || false,
       thumbnail_url: thumbnail_url || null,
+      media_type: mediaType,
       updated_at: new Date().toISOString(),
     }
 

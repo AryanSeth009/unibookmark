@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS public.collections (
   description TEXT,
   color TEXT DEFAULT '#6366f1',
   icon TEXT DEFAULT 'folder',
+  parent_id UUID REFERENCES public.collections(id) ON DELETE SET NULL,
   is_default BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -32,6 +33,8 @@ CREATE TABLE IF NOT EXISTS public.bookmarks (
   favicon_url TEXT,
   domain TEXT,
   tags TEXT[] DEFAULT '{}',
+  language TEXT DEFAULT 'en',
+  media_type TEXT DEFAULT 'other', -- 'audio', 'video', 'other'
   is_favorite BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

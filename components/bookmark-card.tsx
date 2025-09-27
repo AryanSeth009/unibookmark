@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import type { Bookmark } from "@/types/bookmark"
-import { ExternalLink, MoreVertical, Edit, Trash2, Globe, Heart, BookmarkIcon, Image as ImageIcon } from "lucide-react"
+import { ExternalLink, MoreVertical, Edit, Trash2, Globe, Heart, BookmarkIcon, Image as ImageIcon, Play } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useThumbnail } from "@/hooks/use-thumbnail"
 
@@ -17,9 +17,17 @@ interface BookmarkCardProps {
   onDelete: (bookmarkId: string) => void
   onLikeToggle: (bookmarkId: string, isLiked: boolean) => void // New prop for like toggle
   onFavoriteToggle: (bookmarkId: string, isFavorite: boolean) => void // New prop for favorite toggle
+  onPlayMedia: (bookmark: Bookmark) => void // Changed prop for playing media
 }
 
-export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavoriteToggle }: BookmarkCardProps) {
+// Removed helper function to extract YouTube video ID
+// const getYouTubeVideoId = (url: string): string | null => {
+//   const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/;
+//   const match = url.match(youtubeRegex);
+//   return match ? match[1] : null;
+// };
+
+export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavoriteToggle, onPlayMedia }: BookmarkCardProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
   const { thumbnailUrl, isLoading: thumbnailLoading } = useThumbnail(bookmark.url)
@@ -50,18 +58,26 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavor
 
   const getFaviconUrl = (url: string) => {
     try {
-      const domain = new URL(url).hostname
+      const urlObj = new URL(url)
+      const domain = urlObj.hostname
+
+      // Don't request favicons for local development URLs or empty domains
+      if (domain === "localhost" || domain === "127.0.0.1" || !domain) {
+        return null
+      }
       return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`
     } catch {
       return null
     }
   }
 
+  // Removed youtubeVideoId as it's no longer used
+
   return (
     <div className="n8n-3d-container">
       <Card
         className={cn(
-          "n8n-3d-card group cursor-pointer transition-all min-h-56 duration-300",
+          "n8n-3d-card group cursor-pointer transition-all h-[380px] w-full flex flex-col duration-300",
           "bg-card/80 backdrop-blur-sm border-border/50 hover:border-primary/30 hover:bg-card/90",
           "overflow-hidden n8n-glass",
           "hover:shadow-2xl hover:shadow-primary/20",
@@ -72,7 +88,7 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavor
         onClick={handleVisit}
       >
       <div 
-        className="relative n8n-3d-bg bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 overflow-hidden h-24"
+        className="relative n8n-3d-bg bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10 overflow-hidden h-72 z-0"
         style={{
           backgroundImage: thumbnailUrl 
             ? `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.4)), url(${thumbnailUrl})`
@@ -89,31 +105,6 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavor
             <ImageIcon className="w-6 h-6 text-white/60 animate-pulse" />
           </div>
         )}
-        <div className="absolute top-3 right-3 z-10 n8n-depth-5">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="secondary"
-                size="sm"
-                className="n8n-3d-button h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-background/80 backdrop-blur-sm hover:bg-background/90 n8n-interactive-3d"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MoreVertical className="w-3 h-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="n8n-glass">
-              <DropdownMenuItem onClick={handleEdit} className="n8n-interactive-3d">
-                <Edit className="w-4 h-4 mr-2" />
-                Edit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDelete} className="text-destructive n8n-interactive-3d">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-
         <div className="absolute bottom-3 left-3 flex items-center gap-2">
           {bookmark.favicon && !imageError ? (
             <img
@@ -132,7 +123,7 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavor
                   onError={() => setImageError(true)}
                 />
               ) : (
-                <Globe className="w-3 h-3 text-muted-foreground" />
+                <Globe className="w-3 h-3 text-foreground" />
               )}
             </div>
           )}
@@ -146,7 +137,7 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavor
         <h3 className="n8n-3d-text font-semibold text-foreground mb-3 line-clamp-2 leading-tight text-balance">{bookmark.title}</h3>
 
         {bookmark.description && (
-          <p className="n8n-3d-text text-sm text-muted-foreground mb-4 line-clamp-3 leading-relaxed flex-1">{bookmark.description}</p>
+          <p className="n8n-3d-text text-sm text-foreground mb-4 line-clamp-3 leading-relaxed flex-1 overflow-hidden">{bookmark.description}</p>
         )}
 
         {bookmark.tags.length > 0 && (
@@ -169,7 +160,7 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavor
             {bookmark.tags.length > 3 && (
               <Badge
                 variant="outline"
-                className="text-xs px-2.5 py-1 font-medium border-border/50 bg-muted/50 text-muted-foreground"
+                className="text-xs px-2.5 py-1 font-medium border-border/50 bg-muted/50 text-foreground"
               >
                 +{bookmark.tags.length - 3}
               </Badge>
@@ -180,12 +171,12 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavor
         <div className="flex items-center justify-between n8n-depth-3 mt-auto">
           <div className="flex items-center gap-1">
             <Button
-              variant="ghost"
+              variant={"ghost"}
               size="sm"
               className={cn(
                 "n8n-3d-button h-8 px-3 text-xs transition-all duration-200",
-                "opacity-0 group-hover:opacity-100 n8n-interactive-3d",
-                bookmark.isLiked && "text-red-500 opacity-100 n8n-glow-accent", // Use bookmark.isLiked
+                "n8n-interactive-3d",
+                bookmark.isLiked && "text-red-500 n8n-glow-accent", // Use bookmark.isLiked
               )}
               onClick={(e) => {
                 e.stopPropagation()
@@ -197,12 +188,12 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavor
             </Button>
 
             <Button
-              variant="ghost"
+              variant={"ghost"}
               size="sm"
               className={cn(
                 "n8n-3d-button h-8 px-3 text-xs transition-all duration-200",
-                "opacity-0 group-hover:opacity-100 n8n-interactive-3d",
-                bookmark.isFavorite && "text-primary opacity-100 n8n-glow", // Use bookmark.isFavorite
+                "n8n-interactive-3d",
+                bookmark.isFavorite && "text-primary n8n-glow", // Use bookmark.isFavorite
               )}
               onClick={(e) => {
                 e.stopPropagation()
@@ -214,22 +205,69 @@ export function BookmarkCard({ bookmark, onEdit, onDelete, onLikeToggle, onFavor
             </Button>
           </div>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="n8n-3d-button h-8 px-3 text-xs opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-primary/10 hover:text-primary n8n-interactive-3d"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleVisit()
-            }}
-          >
-            <ExternalLink className="w-3 h-3 mr-1.5" />
-            Visit
-          </Button>
+          <div className="flex items-center gap-1 ml-auto">
+            {(bookmark.mediaType === "audio" || bookmark.mediaType === "video") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className={cn(
+                  "n8n-3d-button h-8 px-3 text-xs transition-all duration-200",
+                  "hover:bg-primary/10 hover:text-primary n8n-interactive-3d"
+                )}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlayMedia(bookmark);
+                }}
+              >
+                <Play className="w-3 h-3 mr-1.5" />
+                Play
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "n8n-3d-button h-8 px-3 text-xs transition-all duration-200",
+                "hover:bg-primary/10 hover:text-primary n8n-interactive-3d"
+              )}
+              onClick={(e) => {
+                e.stopPropagation()
+                handleVisit()
+              }}
+            >
+              <ExternalLink className="w-3 h-3 mr-1.5" />
+              Visit
+            </Button>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={cn("n8n-3d-button h-8 w-8 p-0",
+                    "hover:bg-accent/10 hover:text-accent n8n-interactive-3d"
+                  )}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="n8n-glass">
+                <DropdownMenuItem onClick={handleEdit} className="n8n-interactive-3d">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDelete} className="text-destructive n8n-interactive-3d">
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
 
         <div className="mt-4 pt-3 border-t border-border/50">
-          <p className="text-xs text-muted-foreground n8n-3d-text">
+          <p className="text-xs text-foreground n8n-3d-text">
             Added{" "}
             {(() => {
               try {

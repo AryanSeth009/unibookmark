@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS public.bookmarks (
   reading_time INTEGER, -- estimated reading time in minutes
   word_count INTEGER,
   language TEXT DEFAULT 'en',
+  media_type TEXT DEFAULT 'other', -- 'audio', 'video', 'other'
   is_favorite BOOLEAN DEFAULT FALSE,
   is_archived BOOLEAN DEFAULT FALSE,
   collection_id UUID REFERENCES public.collections(id) ON DELETE SET NULL,

@@ -10,6 +10,7 @@ import type { Bookmark, Collection } from "@/types/bookmark"
 import { X, Plus, Check, Globe, Tag, Folder, Sparkles, Loader2 } from "lucide-react" // Added Loader2
 import { cn } from "@/lib/utils"
 import { motion } from "framer-motion" // Added motion
+import { useProfile } from "@/hooks/use-profile"
 
 interface QuickAddBookmarkProps {
   onSave: (bookmark: Omit<Bookmark, "id" | "createdAt">) => void
@@ -66,8 +67,14 @@ export function QuickAddBookmark({ onSave, collections, onClose, className }: Qu
         setShowSuccess(false)
         onClose?.()
       }, 1500)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to save bookmark:", error)
+      let errorMessage = "Failed to add bookmark. Please try again."
+      if (error.message.includes("403")) {
+        errorMessage = error.message // Assuming the backend sends a user-friendly message
+      }
+      // You might want to display this error message to the user, e.g., using a toast
+      alert(errorMessage)
     } finally {
       setIsSaving(false)
     }
@@ -107,7 +114,7 @@ export function QuickAddBookmark({ onSave, collections, onClose, className }: Qu
             <Check className="w-8 h-8 text-green-600 dark:text-green-400" />
           </motion.div>
           <div>
-            <h3 className="text-xl font-bold text-foreground bg-gradient-to-r from-green-500 to-teal-400 bg-clip-text text-transparent">Bookmark Saved!</h3>
+            <h3 className="text-xl font-bold bg-gradient-to-r from-green-500 to-teal-400 bg-clip-text text-transparent">Bookmark Saved!</h3>
             <p className="text-sm text-muted-foreground mt-1">
               Added to <span className="font-medium text-primary">{collections.find((c) => c.id === formData.collectionId)?.name}</span>
             </p>
@@ -116,6 +123,8 @@ export function QuickAddBookmark({ onSave, collections, onClose, className }: Qu
       </div>
     )
   }
+
+  const { profile } = useProfile()
 
   return (
     <motion.div
@@ -134,7 +143,7 @@ export function QuickAddBookmark({ onSave, collections, onClose, className }: Qu
             <Sparkles className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Quick Save</h2>
+            <h2 className="text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Quick Save</h2>
             <p className="text-xs text-muted-foreground">Save this page to your bookmarks effortlessly</p>
           </div>
         </div>
@@ -143,6 +152,10 @@ export function QuickAddBookmark({ onSave, collections, onClose, className }: Qu
             <X className="w-4 h-4 text-foreground" />
           </Button>
         )}
+      </div>
+
+      <div className="text-sm text-muted-foreground text-center">
+        {profile.bookmark_count || 0} / 50 bookmarks used
       </div>
 
       {/* URL Preview */}

@@ -416,7 +416,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-n8n-dark text-white font-inter relative flex"> {/* Applied n8n-dark background and Inter font, and kept flex for layout */}
+    <div className="h-full flex flex-1 bg-n8n-dark text-white font-inter relative"> {/* Applied n8n-dark background and Inter font, and kept flex for layout */}
       {/* console.log("app/page.tsx: rendering HomePage, playingVideoId:", playingVideoId, "isYoutubeModalOpen:", isYoutubeModalOpen, "isYoutubeApiReady:", isYoutubeApiReady) */}
       {/* Elegant Gradient Background - n8n style */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -434,7 +434,7 @@ export default function HomePage() {
           </div>
       </div>
 
-      <div className="relative flex flex-1 h-screen overflow-hidden">
+      <div className="relative flex flex-1 overflow-y-auto">
         <KeyboardShortcuts
           onAddBookmark={() => setIsModalOpen(true)}
           onSearch={handleFocusSearch}

@@ -43,6 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Settings, LogOut } from "lucide-react";
 import randomProfile from 'random-profile-generator';
+import { Progress } from "@/components/ui/progress"; // Import Progress component
 
 interface SidebarProps {
   collections: Collection[];
@@ -186,8 +187,12 @@ export function Sidebar({
         .toUpperCase()
     : (randomUserData.fullName ? randomUserData.fullName.split(" ").map((n: string) => n[0]).join("").toUpperCase() : "U");
 
+  const bookmarkLimit = 50; // Define the bookmark limit
+  const currentBookmarks = profile?.bookmark_count || 0;
+  const bookmarkProgress = (currentBookmarks / bookmarkLimit) * 100;
+
   return (
-    <div className=" w-64 bg-sidebar border-r border-sidebar-border flex flex-col">
+    <div className="w-64 h-full bg-sidebar border-r border-sidebar-border flex flex-col">
       <div className="p-4 border-b border-sidebar-border/50">
         <div className="flex items-center gap-2">
           {/* <div className="w-6 h-6 rounded-md bg-primary flex items-center justify-center">
@@ -203,7 +208,15 @@ export function Sidebar({
         </div>
       </div>
 
-      <ScrollArea className="flex-1  ">
+      <div className="p-4 border-b border-sidebar-border/50 text-center">
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-foreground">{currentBookmarks} Bookmarks</p>
+          <Progress value={bookmarkProgress} className="h-2 bg-primary/20" />
+          <p className="text-xs text-muted-foreground">{bookmarkLimit - currentBookmarks} more to reach next goal!</p>
+        </div>
+      </div>
+
+      <ScrollArea className="flex-1 min-h-0 overflow-y-auto">
         <div className="p-4 space-y-6">
           {/* Collections Section */}
           <div>
@@ -354,7 +367,7 @@ export function Sidebar({
 
                       {subcollections.length > 0 && isExpanded && (
                         <div className="relative ml-4 space-y-1 mt-1 border-l-2 border-dashed border-border/50">
-                          {subcollections.map((sub) => (
+                          {subcollections.map((sub: Collection) => (
                             <button
                               key={sub.id}
                               onClick={() => onSelectCollection(sub.id)}

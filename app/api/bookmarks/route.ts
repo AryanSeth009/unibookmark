@@ -199,6 +199,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(existingBookmark, { status: 200 })
     }
 
+    // Check current bookmark count for the user
+    const { count, error: countError } = await supabase
+      .from("bookmarks")
+      .select("count", { count: "exact" })
+      .eq("user_id", user.id)
+
+    if (countError) {
+      console.error("Database error fetching bookmark count:", countError)
+      return NextResponse.json({ error: "Failed to check bookmark limit" }, { status: 500 })
+    }
+
+    const BOOKMARK_LIMIT = 50
+    if (count && count >= BOOKMARK_LIMIT) {
+      return NextResponse.json({ error: `You have reached the maximum of ${BOOKMARK_LIMIT} bookmarks.` }, { status: 403 })
+    }
+
     const bookmarkData = {
       title,
       url,

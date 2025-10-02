@@ -216,7 +216,7 @@ export function MainContent({
   const hasActiveFilters = searchQuery || selectedTags.length > 0 || dateFilter !== "all"
 
   return (
-    <div className="flex-1 w-full flex flex-col bg-background n8n-3d-container">
+    <div className="flex-1 flex flex-col overflow-y-auto bg-background n8n-3d-container">
       <div className="border-b border-border/50 bg-card/50 backdrop-blur-sm n8n-glass n8n-3d-bg">
         <div className="p-6">
           <div className="flex w-full items-center justify-between mb-6">
@@ -377,7 +377,7 @@ export function MainContent({
         </div>
       </div>
 
-      <div className="flex-1 p-6 bg-gradient-to-br from-background via-background to-muted/20 n8n-3d-bg n8n-parallax overflow-y-auto">
+      <div className="flex-1 p-6 bg-gradient-to-br from-background via-background to-muted/20 n8n-3d-bg n8n-parallax">
         
         {filteredBookmarks.length === 0 ? (
           <EmptyState

@@ -15,5 +15,19 @@ export interface Bookmark {
   isLiked?: boolean
 }
 
+export interface Collection {
+  id: string;
+  name: string;
+  description?: string;
+  color?: string;
+  icon?: string;
+  parentId?: string;
+  isDefault?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+  count?: number;
+  children?: Collection[];
+}
+
 export type ViewMode = "grid" | "list" | "masonry"
 export type DateFilter = "all" | "today" | "week" | "month"

@@ -19,9 +19,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`} style={{ fontFamily: 'Inter, var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"' }}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+    <html lang="en" suppressHydrationWarning className="h-full">
+      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased h-full flex flex-col`} style={{ fontFamily: 'Inter, var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol"' }}>
+        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange className="flex-1 h-full">
           <Suspense fallback={null}>{children}</Suspense>
         </ThemeProvider>
         <Analytics />

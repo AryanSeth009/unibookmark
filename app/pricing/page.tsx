@@ -151,6 +151,52 @@ export default function PricingPage() {
     );
   }
 
+  const handleProPlanClick = async (amount: string) => {
+    if (!profile?.id) {
+      toast({
+        title: "Error",
+        description: "User not logged in or profile not loaded.",
+        variant: "destructive",
+      });
+      return;
+    }
+    try {
+      const response = await fetch(
+        "/api/phonepe/initiate-payment",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            amount: amount,
+            planName: `Pro 5GB (${amount === '708' ? 'Annual' : 'Monthly'})`,
+            userId: profile.id,
+          }),
+        }
+      );
+      const data = await response.json();
+      if (data.url) {
+        router.push(data.url);
+      } else {
+        throw new Error(
+          data.error || "Failed to initiate PhonePe payment"
+        );
+      }
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message || "Something went wrong with PhonePe payment.",
+        variant: "destructive",
+      });
+      console.error("PhonePe payment error:", error);
+    }
+  };
+
+  const handleFreePlanClick = (price?: string) => {
+    console.log("Free plan clicked! Price:", price);
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground font-inter relative flex">
       {" "}
@@ -164,8 +210,6 @@ export default function PricingPage() {
           <div className="absolute top-0 right-0 w-1/2 h-full bg-[linear-gradient(45deg,transparent_25%,rgba(108,71,255,0.1)_25%,rgba(108,71,255,0.1)_35%,transparent_35%)]" />
         </div>
       </div>
-      
-        
       <div className="flex-1 overflow-y-auto">
         <div className="absolute top-4 left-4 z-20">
           <Button
@@ -192,237 +236,118 @@ export default function PricingPage() {
               Pricing Plans
             </h1>
             <p className="text-xl max-w-3xl mx-auto text-foreground mt-4">
-              Unlock the full potential of your bookmarks. Choose a plan that
-              suits your storage and feature needs.
+              Receive unlimited credits when you pay yearly, and save on your plan.
             </p>
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4, ease: "easeOut" }}
-            className="grid md:grid-cols-3 gap-8"
-          >
-            {pricingPlans.map((plan, index) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+              {pricingPlans.map((plan) => (
               <Card
                 key={plan.name}
-                className={`bg-card backdrop-blur-xl border border-border 
-                                    hover:border-primary/30 
-                                    transition-all duration-300 
-                                    group 
-                                    transform hover:scale-105 
-                                    hover:shadow-2xl
-                                    ${
-                                      plan.name.startsWith("Pro")
-                                        ? "border-2 border-primary/50"
-                                        : ""
-                                    }`}
+                className={cn(
+                  "bg-card border-border transition-all duration-300 group transform hover:scale-105 hover:shadow-xl",
+                  plan.name === "Pro" && "border-primary/50",
+                  plan.name === "Enterprise" && "bg-gray-900 text-white border-gray-700 hover:border-gray-500"
+                )}
               >
                 <CardHeader className="pb-4">
                   <div className="flex justify-between items-center">
-                    <CardTitle className="text-2xl text-foreground">
+                    <CardTitle className={cn("text-2xl", plan.name === "Enterprise" && "text-white")}>
                       {plan.name}
                     </CardTitle>
-                    {/* Show "Most Popular" badge on the middle tier */}
-                    {plan.name === "Pro 5GB" && (
+                    {/* Show "Popular" badge on the Pro tier */}
+                    {plan.popular && (
                       <span
-                        className="bg-n8n-purple/20 text-n8n-purple 
-                                                px-3 py-1 rounded-full text-xs font-semibold"
+                        className="bg-orange-500 text-white px-3 py-1 rounded-full text-xs font-semibold"
                       >
-                        Most Popular
+                        Popular
                       </span>
                     )}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div className="text-4xl font-bold">
-                    {plan.price === "0" ? "Free" : `₹${plan.price}/mo`}{" "}
-                    {/* Display price in INR */}
-                  </div>
+                <CardContent className="space-y-6 ">
                   {plan.paymentOptions ? (
-                    plan.paymentOptions.map((option) => (
-                      <div key={option.type} className="flex items-baseline gap-1">
-                        <span className="text-4xl font-bold">
-                          {option.displayPrice === "0" ? "Free" : `₹${option.displayPrice}`}
-                        </span>
-                        <span className="text-lg font-semibold text-foreground">
-                          {option.description}
+                    <div className="space-y-4">
+                      {plan.paymentOptions.map((option) => (
+                        <div key={option.type} className="flex flex-col items-center">
+                          <div className="text-4xl font-bold">
+                            {option.price === "0" ? "$0" : `$${option.displayPrice}`}{" "}
+                          </div>
+                          <div className="flex items-baseline gap-1">
+                            <span className="text-lg font-semibold text-muted-foreground">
+                              {option.description}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <>
+                      <div className="text-4xl font-bold">
+                        {plan.price === "0" ? "$0" : `$${plan.price}`}{" "}
+                      </div>
+                      <div className="flex items-baseline gap-1">
+                        <span className="text-lg font-semibold text-muted-foreground">
+                          {plan.name === "Free" ? "" : "/month"}
                         </span>
                       </div>
-                    ))
-                  ) : (
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-bold">
-                        {plan.price === "0" ? "Free" : `₹${plan.price}`}
-                      </span>
-                      <span className="text-lg font-semibold text-foreground">
-                        /mo
-                      </span>
-                    </div>
+                    </>
                   )}
 
-                  <div className="text-lg font-semibold text-foreground">
-                    Storage:{" "}
-                    <span className="text-foreground">{plan.storage}</span>
-                  </div>
-
-                  <div className="space-y-3">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      Features
-                    </h3>
+                  <ul className="space-y-3 text-sm text-muted-foreground">
                     {plan.features.map((feature) => (
-                      <div
-                        key={feature}
-                        className="flex items-center space-x-2 text-foreground"
-                      >
-                        <Check className="w-5 h-5 text-primary" />{" "}
-                        {/* n8n teal for checkmarks */}
-                        <span>{feature}</span>
-                      </div>
+                      <li key={feature} className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        {feature}
+                      </li>
                     ))}
-
-                    {plan.unavailableFeatures.map((feature) => (
-                      <div
-                        key={feature}
-                        className="flex items-center space-x-2 text-muted-foreground line-through"
-                      >
-                        <X className="w-5 h-5 text-destructive" />{" "}
-                        {/* n8n pink for unavailable features */}
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                  </div>
+                    {plan.unavailableFeatures &&
+                      plan.unavailableFeatures.map((feature) => (
+                        <li key={feature} className="flex items-center gap-2 text-gray-500 line-through">
+                          <X className="h-4 w-4 text-red-500" />
+                          {feature}
+                        </li>
+                      ))}
+                  </ul>
                 </CardContent>
                 <CardFooter>
-                  <Button
-                    variant="outline"
-                    className={`w-full rounded-full 
-                                            bg-background border-border 
-                                            text-foreground hover:bg-primary/20 
-                                            transition-colors duration-300
-                                            group-hover:bg-primary/30
-                                            ${
-                                              plan.name.startsWith("Pro")
-                                                ? "bg-primary border-primary hover:bg-primary/80"
-                                                : ""
-                                            }`}
-                  >
-                    {plan.buttonText}
-                  </Button>
                   {plan.paymentOptions ? (
-                    plan.paymentOptions.map((option) => (
-                      <Button
-                        key={option.type}
-                        variant="outline"
-                        className={cn(
-                          "w-full rounded-full transition-colors duration-300 mt-2",
-                          option.type === "annually" ? "bg-primary border-primary hover:bg-primary/80 text-primary-foreground" : "bg-background border-border text-foreground hover:bg-primary/20 group-hover:bg-primary/30"
-                        )}
-                        onClick={async () => {
-                          if (!profile?.id) {
-                            toast({
-                              title: "Error",
-                              description:
-                                "User not logged in or profile not loaded.",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-                          try {
-                            const response = await fetch(
-                              "/api/phonepe/initiate-payment",
-                              {
-                                method: "POST",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({
-                                  amount: option.price,
-                                  planName: `${plan.name} (${option.type})`,
-                                  userId: profile.id,
-                                }),
-                              }
-                            );
-                            const data = await response.json();
-                            if (data.url) {
-                              router.push(data.url);
+                    <div className="w-full space-y-2">
+                      {plan.paymentOptions.map((option) => (
+                        <Button
+                          key={option.type}
+                          variant="outline"
+                          className="w-full rounded-full"
+                          onClick={() => {
+                            if (option.price === "0") {
+                              handleFreePlanClick();
                             } else {
-                              throw new Error(
-                                data.error || "Failed to initiate PhonePe payment"
-                              );
+                              handleProPlanClick(option.price);
                             }
-                          } catch (error: any) {
-                            toast({
-                              title: "Error",
-                              description:
-                                error.message ||
-                                "Something went wrong with PhonePe payment.",
-                              variant: "destructive",
-                            });
-                            console.error("PhonePe payment error:", error);
-                          }
-                        }}
-                      >
-                        {option.buttonText}
-                      </Button>
-                    ))
+                          }}
+                        >
+                          {option.buttonText}
+                        </Button>
+                      ))}
+                    </div>
                   ) : (
-                    plan.name.startsWith("Pro") && (
-                      <Button
-                        variant="outline"
-                        className="w-full rounded-full bg-yellow-500 border-yellow-600 text-white hover:bg-yellow-600 transition-colors duration-300 mt-2"
-                        onClick={async () => {
-                          if (!profile?.id) {
-                            toast({
-                              title: "Error",
-                              description:
-                                "User not logged in or profile not loaded.",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-                          try {
-                            const response = await fetch(
-                              "/api/phonepe/initiate-payment",
-                              {
-                                method: "POST",
-                                headers: {
-                                  "Content-Type": "application/json",
-                                },
-                                body: JSON.stringify({
-                                  amount: plan.price,
-                                  planName: plan.name,
-                                  userId: profile.id,
-                                }),
-                              }
-                            );
-                            const data = await response.json();
-                            if (data.url) {
-                              router.push(data.url);
-                            } else {
-                              throw new Error(
-                                data.error || "Failed to initiate PhonePe payment"
-                              );
-                            }
-                          } catch (error: any) {
-                            toast({
-                              title: "Error",
-                              description:
-                                error.message ||
-                                "Something went wrong with PhonePe payment.",
-                              variant: "destructive",
-                            });
-                            console.error("PhonePe payment error:", error);
-                          }
-                        }}
-                      >
-                        Pay with PhonePe UPI
-                      </Button>
-                    )
+                    <Button
+                      className="w-full rounded-full"
+                      variant={plan.name === "Free" ? "outline" : "default"}
+                      onClick={() => {
+                        if (plan.price === "0") {
+                          handleFreePlanClick();
+                        } else {
+                          handleProPlanClick(plan.price);
+                        }
+                      }}
+                    >
+                      {plan.buttonText}
+                    </Button>
                   )}
                 </CardFooter>
               </Card>
             ))}
+            </div>
           </motion.div>
 
           <motion.div

@@ -257,6 +257,10 @@
   animation: n8n-float 6s ease-in-out infinite;
 }
 
+.n8n-float:hover {
+  animation-play-state: paused;
+}
+
 @keyframes n8n-float {
   0%, 100% { transform: translateY(0px) rotate(0deg); }
   50% { transform: translateY(-10px) rotate(1deg); }

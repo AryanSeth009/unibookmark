@@ -7,6 +7,9 @@ export interface Profile {
   avatar_url?: string
   created_at: string
   updated_at: string
+  last_bookmark_date?: string
+  bookmark_streak?: number
+  bookmark_count?: number
 }
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())

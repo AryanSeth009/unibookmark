@@ -19,7 +19,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 
-    return NextResponse.json({ profile })
+    const { count: bookmarkCount, error: countError } = await supabase
+      .from("bookmarks")
+      .select("count", { count: "exact" })
+      .eq("user_id", user.id)
+
+    if (countError) {
+      return NextResponse.json({ error: countError.message }, { status: 500 })
+    }
+
+    return NextResponse.json({ profile: { ...profile, bookmark_count: bookmarkCount } })
   } catch (error) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
